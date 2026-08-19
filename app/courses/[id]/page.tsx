@@ -12,7 +12,7 @@ export default async function CoursePage({
 
   const { data: course } = await supabase
     .from("courses")
-    .select("id, title, description, template, is_published")
+    .select("id, title, description, template, is_published, price")
     .eq("id", id)
     .eq("is_published", true)
     .single();
@@ -39,8 +39,13 @@ export default async function CoursePage({
         <p className="mt-4 text-slate-300">
           {course.description || "No description yet."}
         </p>
+        <p className="mt-3 text-lg text-orange-400">
+          {Number(course.price) > 0
+            ? `$${Number(course.price).toFixed(2)}`
+            : "Free"}
+        </p>
 
-        <EnrollButton courseId={course.id} />
+        <EnrollButton courseId={course.id} price={Number(course.price) || 0} />
 
         <section className="mt-10">
           <h2 className="text-xl font-semibold">Sessions</h2>

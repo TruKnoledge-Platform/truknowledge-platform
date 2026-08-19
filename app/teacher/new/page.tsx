@@ -36,6 +36,7 @@ export default function NewCoursePage() {
   const supabase = createClient();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [price, setPrice] = useState("0");
   const [template, setTemplate] = useState("classic_linear");
   const [infoOpen, setInfoOpen] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -61,7 +62,7 @@ export default function NewCoursePage() {
       description,
       template,
       is_published: false,
-      price: 0,
+      price: Number(price) || 0,
     });
 
     setLoading(false);
@@ -83,7 +84,7 @@ export default function NewCoursePage() {
         </a>
         <h1 className="mt-4 text-3xl font-semibold">Create a course</h1>
         <p className="mt-2 text-slate-400">
-          Choose a template and add the basics. You can add sessions later.
+          Choose a template and add the basics. Price 0 means free.
         </p>
 
         <form onSubmit={handleCreate} className="mt-8 space-y-6">
@@ -107,6 +108,19 @@ export default function NewCoursePage() {
               rows={4}
               className="w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
             />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm text-slate-300">Price (USD)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className="w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
+            />
+            <p className="mt-1 text-xs text-slate-500">Use 0 for a free course.</p>
           </div>
 
           <div>

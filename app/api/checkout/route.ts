@@ -1,0 +1,72 @@
+import { NextRequest, NextResponse } from "next/server";
+import Stripe from "stripe";
+import { createClient } from "@/lib/supabase-server";
+
+export async function POST(req: NextRequest) {
+  try {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      return NextResponse.json(
+        { error: "Missing STRIPE_SECRET_KEY. Restart the app after saving .env.local." },
+        { status: 500 }
+      );
+    }
+
+    const { courseId } = await req.json();
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+    }
+
+    const { data: course } = await supabase
+      .from("courses")
+      .select("id, title, price, is_published")
+      .eq("id", courseId)
+      .single();
+
+    if (!course || !course.is_published) {
+      return NextResponse.json({ error: "Course not available" }, { status: 400 });
+    }
+
+    const price = Number(course.price) || 0;
+    if (price <= 0) {
+      return NextResponse.json({ error: "This course is free" }, { status: 400 });
+    }
+
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const origin = req.headers.get("origin") || "http://localhost:3000";
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      customer_email: user.email || undefined,
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: "usd",
+            unit_amount: Math.round(price * 100),
+            product_data: { name: course.title },
+          },
+        },
+      ],
+      metadata: {
+        courseId: course.id,
+        userId: user.id,
+      },
+      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${origin}/courses/${course.id}`,
+    });
+
+    if (!session.url) {
+      return NextResponse.json({ error: "Stripe did not return a checkout URL" }, { status: 500 });
+    }
+
+    return NextResponse.json({ url: session.url });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Checkout failed";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
