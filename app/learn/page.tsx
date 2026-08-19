@@ -60,7 +60,7 @@ export default async function LearnPage() {
             return (
               <a
                 key={item.id}
-                href={`/courses/${course.id}`}
+                href={`/learn/${course.id}`}
                 className="rounded-2xl border border-slate-800 bg-[#111827] p-6 hover:border-orange-500"
               >
                 <h3 className="text-lg font-medium">{course.title}</h3>
