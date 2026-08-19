@@ -33,6 +33,7 @@ export default function EditCoursePage() {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [thumbnail, setThumbnail] = useState("");
   const [template, setTemplate] = useState("classic_linear");
   const [isPublished, setIsPublished] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -75,7 +76,7 @@ export default function EditCoursePage() {
     async function loadCourse() {
       const { data, error } = await supabase
         .from("courses")
-        .select("title, description, template, is_published")
+        .select("title, description, template, is_published, thumbnail_url")
         .eq("id", id)
         .single();
 
@@ -87,6 +88,7 @@ export default function EditCoursePage() {
 
       setTitle(data.title || "");
       setDescription(data.description || "");
+      setThumbnail(data.thumbnail_url || "");
       setTemplate(data.template || "classic_linear");
       setIsPublished(Boolean(data.is_published));
       await loadSessions();
@@ -106,6 +108,7 @@ export default function EditCoursePage() {
       .update({
         title,
         description,
+        thumbnail_url: thumbnail,
         template,
         updated_at: new Date().toISOString(),
       })
@@ -252,6 +255,7 @@ export default function EditCoursePage() {
               className="w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
             />
           </div>
+
           <div>
             <label className="mb-2 block text-sm text-slate-300">Short description</label>
             <textarea
@@ -261,6 +265,17 @@ export default function EditCoursePage() {
               className="w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
             />
           </div>
+
+          <div>
+            <label className="mb-2 block text-sm text-slate-300">Course image URL</label>
+            <input
+              value={thumbnail}
+              onChange={(e) => setThumbnail(e.target.value)}
+              placeholder="https://..."
+              className="w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
+            />
+          </div>
+
           <div>
             <label className="mb-2 block text-sm text-slate-300">Template</label>
             <select
@@ -275,6 +290,7 @@ export default function EditCoursePage() {
               ))}
             </select>
           </div>
+
           <button
             type="submit"
             disabled={saving}

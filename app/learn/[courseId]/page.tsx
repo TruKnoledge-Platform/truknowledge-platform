@@ -45,6 +45,7 @@ export default function PlayCoursePage() {
   const [currentId, setCurrentId] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -110,6 +111,13 @@ export default function PlayCoursePage() {
     load();
   }, [courseId]);
 
+  async function shareCourse() {
+    const shareUrl = `${window.location.origin}/webapp/${courseId}`;
+    await navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
   const current = sessions.find((s) => s.id === currentId);
   const url = current?.video_url || "";
   const embed = url ? videoEmbed(url) : "";
@@ -132,9 +140,18 @@ export default function PlayCoursePage() {
   return (
     <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
       <div className="mx-auto max-w-5xl">
-        <a href="/learn" className="text-sm text-slate-400 hover:text-white">
-          Back to my courses
-        </a>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <a href="/learn" className="text-sm text-slate-400 hover:text-white">
+            Back to my courses
+          </a>
+          <button
+            type="button"
+            onClick={shareCourse}
+            className="rounded-lg border border-orange-500 px-4 py-2 text-sm text-orange-400"
+          >
+            {copied ? "Link copied" : "Share"}
+          </button>
+        </div>
 
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
 

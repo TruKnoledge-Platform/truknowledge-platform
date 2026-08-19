@@ -60,12 +60,20 @@ export default async function TeacherPage() {
                     {course.template} · {course.is_published ? "Published" : "Draft"}
                   </p>
                 </div>
-                <a
-                  href={`/teacher/${course.id}`}
-                  className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium hover:bg-orange-600"
-                >
-                  Edit
-                </a>
+                <div className="flex flex-wrap gap-2">
+                  <a
+                    href={`/teacher/${course.id}`}
+                    className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium hover:bg-orange-600"
+                  >
+                    Edit
+                  </a>
+                  <a
+                    href={`/webapp/${course.id}`}
+                    className="rounded-lg border border-orange-500 px-4 py-2 text-sm text-orange-400"
+                  >
+                    Web App
+                  </a>
+                </div>
               </div>
             </div>
           ))}
