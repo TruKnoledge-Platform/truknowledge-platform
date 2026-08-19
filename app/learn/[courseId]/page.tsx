@@ -11,6 +11,14 @@ type Session = {
   video_url: string | null;
 };
 
+type Material = {
+  id: string;
+  session_id: string;
+  title: string;
+  file_url: string | null;
+  is_advanced: boolean;
+};
+
 function videoEmbed(url: string) {
   try {
     if (url.includes("youtube.com/watch")) {
@@ -33,6 +41,7 @@ export default function PlayCoursePage() {
   const supabase = createClient();
   const [title, setTitle] = useState("");
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
   const [currentId, setCurrentId] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -79,9 +88,22 @@ export default function PlayCoursePage() {
         .eq("course_id", courseId)
         .order("order_index", { ascending: true });
 
+      const list = sessionRows || [];
       setTitle(course.title);
-      setSessions(sessionRows || []);
-      setCurrentId(sessionRows?.[0]?.id || "");
+      setSessions(list);
+      setCurrentId(list[0]?.id || "");
+
+      if (list.length) {
+        const { data: mats } = await supabase
+          .from("materials")
+          .select("id, session_id, title, file_url, is_advanced")
+          .in(
+            "session_id",
+            list.map((s) => s.id)
+          );
+        setMaterials(mats || []);
+      }
+
       setLoading(false);
     }
 
@@ -92,6 +114,12 @@ export default function PlayCoursePage() {
   const url = current?.video_url || "";
   const embed = url ? videoEmbed(url) : "";
   const isYouTube = embed.includes("youtube.com/embed");
+  const sessionMaterials = materials.filter(
+    (m) => m.session_id === currentId && !m.is_advanced
+  );
+  const advancedMaterials = materials.filter(
+    (m) => m.session_id === currentId && m.is_advanced
+  );
 
   if (loading) {
     return (
@@ -154,6 +182,43 @@ export default function PlayCoursePage() {
             ))}
           </select>
         </div>
+
+        <section className="mt-8 grid gap-4 md:grid-cols-2">
+          <div className="rounded-xl border border-slate-800 bg-[#111827] p-4">
+            <h2 className="mb-3 font-medium">Session materials</h2>
+            {!sessionMaterials.length && (
+              <p className="text-sm text-slate-400">No materials for this session.</p>
+            )}
+            {sessionMaterials.map((item) => (
+              <a
+                key={item.id}
+                href={item.file_url || "#"}
+                target="_blank"
+                rel="noreferrer"
+                className="mb-2 block text-sm text-orange-400 hover:underline"
+              >
+                {item.title}
+              </a>
+            ))}
+          </div>
+          <div className="rounded-xl border border-slate-800 bg-[#111827] p-4">
+            <h2 className="mb-3 font-medium">Extra / Advanced materials</h2>
+            {!advancedMaterials.length && (
+              <p className="text-sm text-slate-400">None yet.</p>
+            )}
+            {advancedMaterials.map((item) => (
+              <a
+                key={item.id}
+                href={item.file_url || "#"}
+                target="_blank"
+                rel="noreferrer"
+                className="mb-2 block text-sm text-orange-400 hover:underline"
+              >
+                {item.title}
+              </a>
+            ))}
+          </div>
+        </section>
       </div>
     </main>
   );

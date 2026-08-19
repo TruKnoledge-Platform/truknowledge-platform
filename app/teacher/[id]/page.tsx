@@ -18,6 +18,14 @@ type Session = {
   video_url: string | null;
 };
 
+type Material = {
+  id: string;
+  session_id: string;
+  title: string;
+  file_url: string | null;
+  is_advanced: boolean;
+};
+
 export default function EditCoursePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -28,7 +36,11 @@ export default function EditCoursePage() {
   const [template, setTemplate] = useState("classic_linear");
   const [isPublished, setIsPublished] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
   const [newSessionTitle, setNewSessionTitle] = useState("");
+  const [materialTitle, setMaterialTitle] = useState<Record<string, string>>({});
+  const [materialUrl, setMaterialUrl] = useState<Record<string, string>>({});
+  const [materialAdvanced, setMaterialAdvanced] = useState<Record<string, boolean>>({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -42,7 +54,21 @@ export default function EditCoursePage() {
       .eq("course_id", id)
       .order("order_index", { ascending: true });
 
-    setSessions(data || []);
+    const rows = data || [];
+    setSessions(rows);
+
+    if (rows.length) {
+      const { data: mats } = await supabase
+        .from("materials")
+        .select("id, session_id, title, file_url, is_advanced")
+        .in(
+          "session_id",
+          rows.map((s) => s.id)
+        );
+      setMaterials(mats || []);
+    } else {
+      setMaterials([]);
+    }
   }
 
   useEffect(() => {
@@ -150,9 +176,34 @@ export default function EditCoursePage() {
       .update({ video_url: videoUrl })
       .eq("id", sessionId);
 
+    if (error) setError(error.message);
+  }
+
+  async function addMaterial(sessionId: string) {
+    const titleValue = (materialTitle[sessionId] || "").trim();
+    const urlValue = (materialUrl[sessionId] || "").trim();
+    if (!titleValue || !urlValue) {
+      setError("Material needs a title and a link.");
+      return;
+    }
+
+    setError("");
+    const { error } = await supabase.from("materials").insert({
+      session_id: sessionId,
+      title: titleValue,
+      file_url: urlValue,
+      is_advanced: Boolean(materialAdvanced[sessionId]),
+    });
+
     if (error) {
       setError(error.message);
+      return;
     }
+
+    setMaterialTitle((prev) => ({ ...prev, [sessionId]: "" }));
+    setMaterialUrl((prev) => ({ ...prev, [sessionId]: "" }));
+    setMaterialAdvanced((prev) => ({ ...prev, [sessionId]: false }));
+    await loadSessions();
   }
 
   if (loading) {
@@ -189,7 +240,6 @@ export default function EditCoursePage() {
         <p className="mt-2 text-sm text-slate-400">
           Status: {isPublished ? "Published" : "Draft"}
         </p>
-
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
 
         <form onSubmit={handleSave} className="mt-8 space-y-6">
@@ -202,7 +252,6 @@ export default function EditCoursePage() {
               className="w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
             />
           </div>
-
           <div>
             <label className="mb-2 block text-sm text-slate-300">Short description</label>
             <textarea
@@ -212,7 +261,6 @@ export default function EditCoursePage() {
               className="w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
             />
           </div>
-
           <div>
             <label className="mb-2 block text-sm text-slate-300">Template</label>
             <select
@@ -227,7 +275,6 @@ export default function EditCoursePage() {
               ))}
             </select>
           </div>
-
           <button
             type="submit"
             disabled={saving}
@@ -240,33 +287,85 @@ export default function EditCoursePage() {
         <section className="mt-12">
           <h2 className="text-xl font-semibold">Sessions</h2>
           <p className="mt-1 text-sm text-slate-400">
-            Add a title, then paste a YouTube or video link.
+            Add a video link and materials for each session.
           </p>
 
-          <div className="mt-4 space-y-3">
-            {sessions.length === 0 && (
-              <p className="text-slate-400">No sessions yet.</p>
-            )}
-            {sessions.map((session) => (
-              <div
-                key={session.id}
-                className="rounded-xl border border-slate-800 bg-[#111827] p-4"
-              >
-                <div className="mb-3">
-                  <span className="text-sm text-orange-400">{session.order_index}</span>
-                  <span className="ml-3 font-medium">{session.title}</span>
+          <div className="mt-4 space-y-4">
+            {sessions.length === 0 && <p className="text-slate-400">No sessions yet.</p>}
+            {sessions.map((session) => {
+              const sessionMaterials = materials.filter((m) => m.session_id === session.id);
+              return (
+                <div
+                  key={session.id}
+                  className="rounded-xl border border-slate-800 bg-[#111827] p-4"
+                >
+                  <div className="mb-3">
+                    <span className="text-sm text-orange-400">{session.order_index}</span>
+                    <span className="ml-3 font-medium">{session.title}</span>
+                  </div>
+
+                  <input
+                    defaultValue={session.video_url || ""}
+                    placeholder="Paste video URL here"
+                    className="mb-4 w-full rounded-lg border border-slate-700 bg-[#0B1220] px-3 py-2 text-sm"
+                    onBlur={(e) => saveSessionVideo(session.id, e.target.value)}
+                  />
+
+                  <p className="mb-2 text-sm text-slate-300">Materials</p>
+                  <div className="mb-3 space-y-2">
+                    {sessionMaterials.map((item) => (
+                      <a
+                        key={item.id}
+                        href={item.file_url || "#"}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block text-sm text-orange-400 hover:underline"
+                      >
+                        {item.title}
+                        {item.is_advanced ? " (advanced)" : ""}
+                      </a>
+                    ))}
+                  </div>
+
+                  <input
+                    value={materialTitle[session.id] || ""}
+                    onChange={(e) =>
+                      setMaterialTitle((prev) => ({ ...prev, [session.id]: e.target.value }))
+                    }
+                    placeholder="Material title"
+                    className="mb-2 w-full rounded-lg border border-slate-700 bg-[#0B1220] px-3 py-2 text-sm"
+                  />
+                  <input
+                    value={materialUrl[session.id] || ""}
+                    onChange={(e) =>
+                      setMaterialUrl((prev) => ({ ...prev, [session.id]: e.target.value }))
+                    }
+                    placeholder="Material link (PDF, Google Doc, etc.)"
+                    className="mb-2 w-full rounded-lg border border-slate-700 bg-[#0B1220] px-3 py-2 text-sm"
+                  />
+                  <label className="mb-3 flex items-center gap-2 text-sm text-slate-400">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(materialAdvanced[session.id])}
+                      onChange={(e) =>
+                        setMaterialAdvanced((prev) => ({
+                          ...prev,
+                          [session.id]: e.target.checked,
+                        }))
+                      }
+                    />
+                    Extra / Advanced material
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => addMaterial(session.id)}
+                    className="rounded-lg border border-orange-500 px-3 py-2 text-sm text-orange-400"
+                  >
+                    Add material
+                  </button>
                 </div>
-                <input
-                  defaultValue={session.video_url || ""}
-                  placeholder="Paste video URL here"
-                  className="mb-3 w-full rounded-lg border border-slate-700 bg-[#0B1220] px-3 py-2 text-sm"
-                  onBlur={(e) => saveSessionVideo(session.id, e.target.value)}
-                />
-                <p className="text-xs text-slate-500">
-                  Click outside the box to save the video link.
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <form onSubmit={handleAddSession} className="mt-6 flex flex-col gap-3 sm:flex-row">
