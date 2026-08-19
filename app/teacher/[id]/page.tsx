@@ -253,7 +253,7 @@ export default function EditCoursePage() {
             <input
               value={newSessionTitle}
               onChange={(e) => setNewSessionTitle(e.target.value)}
-              placeholder="Session title"
+              placeholder="Write New Session Title Here"
               className="flex-1 rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
             />
             <button
