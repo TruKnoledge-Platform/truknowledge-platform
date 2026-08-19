@@ -34,8 +34,11 @@ export default function EditCoursePage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [thumbnail, setThumbnail] = useState("");
+  const [price, setPrice] = useState("0");
   const [template, setTemplate] = useState("classic_linear");
   const [isPublished, setIsPublished] = useState(false);
+  const [webAppUrl, setWebAppUrl] = useState("");
+  const [copied, setCopied] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [newSessionTitle, setNewSessionTitle] = useState("");
@@ -73,10 +76,14 @@ export default function EditCoursePage() {
   }
 
   useEffect(() => {
+    if (id && typeof window !== "undefined") {
+      setWebAppUrl(`${window.location.origin}/webapp/${id}`);
+    }
+
     async function loadCourse() {
       const { data, error } = await supabase
         .from("courses")
-        .select("title, description, template, is_published, thumbnail_url")
+        .select("title, description, template, is_published, thumbnail_url, price")
         .eq("id", id)
         .single();
 
@@ -89,6 +96,7 @@ export default function EditCoursePage() {
       setTitle(data.title || "");
       setDescription(data.description || "");
       setThumbnail(data.thumbnail_url || "");
+      setPrice(String(data.price ?? 0));
       setTemplate(data.template || "classic_linear");
       setIsPublished(Boolean(data.is_published));
       await loadSessions();
@@ -110,6 +118,7 @@ export default function EditCoursePage() {
         description,
         thumbnail_url: thumbnail,
         template,
+        price: Number(price) || 0,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);
@@ -209,6 +218,13 @@ export default function EditCoursePage() {
     await loadSessions();
   }
 
+  async function copyWebAppLink() {
+    if (!webAppUrl) return;
+    await navigator.clipboard.writeText(webAppUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
@@ -245,6 +261,24 @@ export default function EditCoursePage() {
         </p>
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
 
+        <section className="mt-6 rounded-2xl border border-orange-500/40 bg-[#111827] p-5">
+          <h2 className="text-lg font-medium">Web App</h2>
+          <p className="mt-1 text-sm text-slate-400">
+            Share this link. Learners log in, enroll, and use the course as a
+            standalone Web App. Edits you make here stay in sync.
+          </p>
+          <p className="mt-3 break-all rounded-lg bg-[#0B1220] px-3 py-2 text-sm text-orange-300">
+            {webAppUrl}
+          </p>
+          <button
+            type="button"
+            onClick={copyWebAppLink}
+            className="mt-3 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium hover:bg-orange-600"
+          >
+            {copied ? "Copied" : "Copy Web App link"}
+          </button>
+        </section>
+
         <form onSubmit={handleSave} className="mt-8 space-y-6">
           <div>
             <label className="mb-2 block text-sm text-slate-300">Course title</label>
@@ -274,6 +308,19 @@ export default function EditCoursePage() {
               placeholder="https://..."
               className="w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
             />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm text-slate-300">Price (USD)</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              className="w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
+            />
+            <p className="mt-1 text-xs text-slate-500">Use 0 for a free course.</p>
           </div>
 
           <div>
