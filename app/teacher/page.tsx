@@ -5,7 +5,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
 
-export default async function TeachPage() {
+export default async function TeacherPage() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -15,32 +15,53 @@ export default async function TeachPage() {
     redirect("/login");
   }
 
+  const { data: courses } = await supabase
+    .from("courses")
+    .select("id, title, template, is_published, created_at")
+    .eq("teacher_id", user.id)
+    .order("created_at", { ascending: false });
+
   return (
     <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
       <div className="mx-auto max-w-4xl">
-        <p className="text-sm text-orange-400 mb-2">Teacher back office</p>
-        <h1 className="text-3xl font-semibold mb-3">Your courses</h1>
-        <p className="text-slate-400 mb-8">
-          Signed in as {user.email}
-        </p>
-
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm text-orange-400">Teacher back office</p>
+            <h1 className="text-3xl font-semibold">Your courses</h1>
+          </div>
           <a
-            href="/teach"
-            className="rounded-2xl border border-slate-800 bg-[#111827] p-6 hover:border-orange-500"
+            href="/teacher/new"
+            className="rounded-lg bg-orange-500 px-4 py-2 font-medium hover:bg-orange-600"
           >
-            <h2 className="text-lg font-medium mb-2">Create a course</h2>
-            <p className="text-slate-400">
-              Build a course and launch it as a Web App from one place.
-            </p>
+            Create a course
           </a>
+        </div>
 
+        {!courses?.length && (
           <div className="rounded-2xl border border-slate-800 bg-[#111827] p-6">
-            <h2 className="text-lg font-medium mb-2">Payouts</h2>
-            <p className="text-slate-400">
-              Stripe payouts will appear here later.
+            <h2 className="text-lg font-medium">No courses yet</h2>
+            <p className="mt-2 text-slate-400">
+              Create your first course to get started.
             </p>
           </div>
+        )}
+
+        <div className="grid gap-4">
+          {courses?.map((course) => (
+            <div
+              key={course.id}
+              className="rounded-2xl border border-slate-800 bg-[#111827] p-6"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-medium">{course.title}</h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    {course.template} · {course.is_published ? "Published" : "Draft"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </main>
