@@ -8,7 +8,24 @@ type Session = {
   id: string;
   title: string;
   order_index: number;
+  video_url: string | null;
 };
+
+function videoEmbed(url: string) {
+  try {
+    if (url.includes("youtube.com/watch")) {
+      const id = new URL(url).searchParams.get("v");
+      if (id) return `https://www.youtube.com/embed/${id}`;
+    }
+    if (url.includes("youtu.be/")) {
+      const id = url.split("youtu.be/")[1].split("?")[0];
+      if (id) return `https://www.youtube.com/embed/${id}`;
+    }
+  } catch {
+    return url;
+  }
+  return url;
+}
 
 export default function PlayCoursePage() {
   const { courseId } = useParams<{ courseId: string }>();
@@ -58,7 +75,7 @@ export default function PlayCoursePage() {
 
       const { data: sessionRows } = await supabase
         .from("sessions")
-        .select("id, title, order_index")
+        .select("id, title, order_index, video_url")
         .eq("course_id", courseId)
         .order("order_index", { ascending: true });
 
@@ -72,6 +89,9 @@ export default function PlayCoursePage() {
   }, [courseId]);
 
   const current = sessions.find((s) => s.id === currentId);
+  const url = current?.video_url || "";
+  const embed = url ? videoEmbed(url) : "";
+  const isYouTube = embed.includes("youtube.com/embed");
 
   if (loading) {
     return (
@@ -96,10 +116,28 @@ export default function PlayCoursePage() {
           {current ? current.title : "No sessions yet"}
         </p>
 
-        <div className="mt-6 flex aspect-video w-full items-center justify-center overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
-          <p className="px-6 text-center text-slate-400">
-            Video will appear here. You can add it in the session editor later.
-          </p>
+        <div className="mt-6 aspect-video w-full overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
+          {!url && (
+            <div className="flex h-full items-center justify-center">
+              <p className="px-6 text-center text-slate-400">
+                No video yet for this session.
+              </p>
+            </div>
+          )}
+          {url && isYouTube && (
+            <iframe
+              src={embed}
+              title={current?.title || "Session video"}
+              className="h-full w-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          )}
+          {url && !isYouTube && (
+            <video src={url} controls className="h-full w-full">
+              Your browser does not support video.
+            </video>
+          )}
         </div>
 
         <div className="mt-6">

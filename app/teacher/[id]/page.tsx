@@ -15,6 +15,7 @@ type Session = {
   id: string;
   title: string;
   order_index: number;
+  video_url: string | null;
 };
 
 export default function EditCoursePage() {
@@ -37,7 +38,7 @@ export default function EditCoursePage() {
   async function loadSessions() {
     const { data } = await supabase
       .from("sessions")
-      .select("id, title, order_index")
+      .select("id, title, order_index, video_url")
       .eq("course_id", id)
       .order("order_index", { ascending: true });
 
@@ -142,6 +143,18 @@ export default function EditCoursePage() {
     setIsPublished(nextValue);
   }
 
+  async function saveSessionVideo(sessionId: string, videoUrl: string) {
+    setError("");
+    const { error } = await supabase
+      .from("sessions")
+      .update({ video_url: videoUrl })
+      .eq("id", sessionId);
+
+    if (error) {
+      setError(error.message);
+    }
+  }
+
   if (loading) {
     return (
       <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
@@ -169,11 +182,7 @@ export default function EditCoursePage() {
                 : "bg-orange-500 hover:bg-orange-600"
             }`}
           >
-            {publishing
-              ? "Updating..."
-              : isPublished
-                ? "Unpublish"
-                : "Publish"}
+            {publishing ? "Updating..." : isPublished ? "Unpublish" : "Publish"}
           </button>
         </div>
 
@@ -231,7 +240,7 @@ export default function EditCoursePage() {
         <section className="mt-12">
           <h2 className="text-xl font-semibold">Sessions</h2>
           <p className="mt-1 text-sm text-slate-400">
-            Add the lessons in this course. Video and materials can come later.
+            Add a title, then paste a YouTube or video link.
           </p>
 
           <div className="mt-4 space-y-3">
@@ -241,10 +250,21 @@ export default function EditCoursePage() {
             {sessions.map((session) => (
               <div
                 key={session.id}
-                className="rounded-xl border border-slate-800 bg-[#111827] px-4 py-3"
+                className="rounded-xl border border-slate-800 bg-[#111827] p-4"
               >
-                <span className="text-sm text-orange-400">{session.order_index}</span>
-                <span className="ml-3">{session.title}</span>
+                <div className="mb-3">
+                  <span className="text-sm text-orange-400">{session.order_index}</span>
+                  <span className="ml-3 font-medium">{session.title}</span>
+                </div>
+                <input
+                  defaultValue={session.video_url || ""}
+                  placeholder="Paste video URL here"
+                  className="mb-3 w-full rounded-lg border border-slate-700 bg-[#0B1220] px-3 py-2 text-sm"
+                  onBlur={(e) => saveSessionVideo(session.id, e.target.value)}
+                />
+                <p className="text-xs text-slate-500">
+                  Click outside the box to save the video link.
+                </p>
               </div>
             ))}
           </div>
