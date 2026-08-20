@@ -43,9 +43,46 @@ export default function PlayCoursePage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [currentId, setCurrentId] = useState("");
+  const [completed, setCompleted] = useState<Record<string, boolean>>({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [savingProgress, setSavingProgress] = useState(false);
+  const [userId, setUserId] = useState("");
+
+  async function markProgress(sessionId: string, isComplete: boolean) {
+    if (!userId || !sessionId) return;
+
+    const { data: existing, error: findError } = await supabase
+      .from("progress")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("session_id", sessionId)
+      .maybeSingle();
+
+    if (findError) {
+      setError(findError.message);
+      return;
+    }
+
+    const payload = {
+      user_id: userId,
+      session_id: sessionId,
+      completed: isComplete,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error: saveError } = existing
+      ? await supabase.from("progress").update(payload).eq("id", existing.id)
+      : await supabase.from("progress").insert(payload);
+
+    if (saveError) {
+      setError(saveError.message);
+      return;
+    }
+
+    setCompleted((prev) => ({ ...prev, [sessionId]: isComplete }));
+  }
 
   useEffect(() => {
     async function load() {
@@ -57,6 +94,8 @@ export default function PlayCoursePage() {
         router.push("/login");
         return;
       }
+
+      setUserId(user.id);
 
       const { data: enrollment } = await supabase
         .from("enrollments")
@@ -103,6 +142,21 @@ export default function PlayCoursePage() {
             list.map((s) => s.id)
           );
         setMaterials(mats || []);
+
+        const { data: progressRows } = await supabase
+          .from("progress")
+          .select("session_id, completed")
+          .eq("user_id", user.id)
+          .in(
+            "session_id",
+            list.map((s) => s.id)
+          );
+
+        const map: Record<string, boolean> = {};
+        (progressRows || []).forEach((row) => {
+          map[row.session_id] = Boolean(row.completed);
+        });
+        setCompleted(map);
       }
 
       setLoading(false);
@@ -118,6 +172,14 @@ export default function PlayCoursePage() {
     setTimeout(() => setCopied(false), 1500);
   }
 
+  async function markComplete() {
+    if (!currentId) return;
+    setSavingProgress(true);
+    setError("");
+    await markProgress(currentId, true);
+    setSavingProgress(false);
+  }
+
   const current = sessions.find((s) => s.id === currentId);
   const url = current?.video_url || "";
   const embed = url ? videoEmbed(url) : "";
@@ -128,6 +190,7 @@ export default function PlayCoursePage() {
   const advancedMaterials = materials.filter(
     (m) => m.session_id === currentId && m.is_advanced
   );
+  const isComplete = Boolean(completed[currentId]);
 
   if (loading) {
     return (
@@ -185,6 +248,20 @@ export default function PlayCoursePage() {
           )}
         </div>
 
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-slate-400">
+            {isComplete ? "This session is complete" : "In this session"}
+          </p>
+          <button
+            type="button"
+            onClick={markComplete}
+            disabled={savingProgress || isComplete || !currentId}
+            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium hover:bg-orange-600 disabled:opacity-60"
+          >
+            {isComplete ? "Completed" : savingProgress ? "Saving..." : "Mark complete"}
+          </button>
+        </div>
+
         <div className="mt-6">
           <label className="mb-2 block text-sm text-slate-300">Course sessions</label>
           <select
@@ -195,6 +272,7 @@ export default function PlayCoursePage() {
             {sessions.map((session) => (
               <option key={session.id} value={session.id}>
                 {session.order_index}. {session.title}
+                {completed[session.id] ? " ✓" : ""}
               </option>
             ))}
           </select>

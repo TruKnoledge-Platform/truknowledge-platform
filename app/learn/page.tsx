@@ -1,6 +1,18 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
 
+function statusLabel(total: number, completed: number, started: number) {
+  if (total > 0 && completed >= total) return "Completed";
+  if (started > 0 || completed > 0) return "In progress";
+  return "START";
+}
+
+function statusClass(label: string) {
+  if (label === "Completed") return "bg-emerald-500/20 text-emerald-300";
+  if (label === "In progress") return "bg-yellow-500/20 text-yellow-300";
+  return "bg-orange-500 text-white";
+}
+
 export default async function LearnPage() {
   const supabase = await createClient();
   const {
@@ -16,6 +28,21 @@ export default async function LearnPage() {
     .select("id, course_id, courses(id, title, description, is_published)")
     .eq("user_id", user.id)
     .eq("status", "active");
+
+  const courseIds = (enrollments || []).map((item) => item.course_id);
+
+  const { data: sessions } = courseIds.length
+    ? await supabase.from("sessions").select("id, course_id").in("course_id", courseIds)
+    : { data: [] as { id: string; course_id: string }[] };
+
+  const { data: progressRows } = await supabase
+    .from("progress")
+    .select("session_id, completed")
+    .eq("user_id", user.id);
+
+  const progressBySession = new Map(
+    (progressRows || []).map((row) => [row.session_id, row.completed])
+  );
 
   return (
     <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
@@ -57,16 +84,40 @@ export default async function LearnPage() {
           {enrollments?.map((item: any) => {
             const course = item.courses;
             if (!course) return null;
+
+            const courseSessions = (sessions || []).filter(
+              (session) => session.course_id === course.id
+            );
+            const started = courseSessions.filter((session) =>
+              progressBySession.has(session.id)
+            ).length;
+            const completed = courseSessions.filter(
+              (session) => progressBySession.get(session.id) === true
+            ).length;
+            const label = statusLabel(courseSessions.length, completed, started);
+
             return (
               <a
                 key={item.id}
                 href={`/learn/${course.id}`}
                 className="rounded-2xl border border-slate-800 bg-[#111827] p-6 hover:border-orange-500"
               >
-                <h3 className="text-lg font-medium">{course.title}</h3>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <h3 className="text-lg font-medium">{course.title}</h3>
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-medium ${statusClass(label)}`}
+                  >
+                    {label}
+                  </span>
+                </div>
                 <p className="mt-2 text-sm text-slate-400">
                   {course.description || "Continue this course"}
                 </p>
+                {courseSessions.length > 0 && label !== "START" && (
+                  <p className="mt-3 text-xs text-slate-500">
+                    {completed} of {courseSessions.length} sessions complete
+                  </p>
+                )}
               </a>
             );
           })}
