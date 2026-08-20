@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
 
     const { data: course } = await supabase
       .from("courses")
-      .select("id, title, price, is_published")
+      .select("id, title, price, is_published, teacher_id")
       .eq("id", courseId)
       .single();
 
@@ -36,8 +36,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "This course is free" }, { status: 400 });
     }
 
+    const { data: teacherProfile } = await supabase
+      .from("teacher_profiles")
+      .select("stripe_account_id, charges_enabled")
+      .eq("user_id", course.teacher_id)
+      .maybeSingle();
+
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
     const origin = req.headers.get("origin") || "http://localhost:3000";
+    const amount = Math.round(price * 100);
+    const applicationFee = Math.round(amount * 0.1);
+
+    const destination =
+      teacherProfile?.charges_enabled && teacherProfile.stripe_account_id
+        ? teacherProfile.stripe_account_id
+        : null;
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -47,7 +60,7 @@ export async function POST(req: NextRequest) {
           quantity: 1,
           price_data: {
             currency: "usd",
-            unit_amount: Math.round(price * 100),
+            unit_amount: amount,
             product_data: { name: course.title },
           },
         },
@@ -56,6 +69,12 @@ export async function POST(req: NextRequest) {
         courseId: course.id,
         userId: user.id,
       },
+      payment_intent_data: destination
+        ? {
+            application_fee_amount: applicationFee,
+            transfer_data: { destination },
+          }
+        : undefined,
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/courses/${course.id}`,
     });

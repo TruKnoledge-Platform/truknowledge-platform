@@ -25,9 +25,15 @@ export default async function TeacherPage() {
             <p className="text-sm text-orange-400">Teacher back office</p>
             <h1 className="text-3xl font-semibold">Your courses</h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3">
             <a href="/auth/signout" className="text-sm text-slate-400 hover:text-white">
               Sign out
+            </a>
+            <a
+              href="/payouts"
+              className="rounded-lg border border-orange-500 px-4 py-2 text-sm text-orange-400"
+            >
+              Payouts
             </a>
             <a
               href="/teacher/new"
