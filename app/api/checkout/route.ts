@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { courseId } = await req.json();
+    const { courseId, next } = await req.json();
     const supabase = await createClient();
     const {
       data: { user },
@@ -46,6 +46,8 @@ export async function POST(req: NextRequest) {
     const origin = req.headers.get("origin") || "http://localhost:3000";
     const amount = Math.round(price * 100);
     const applicationFee = Math.round(amount * 0.1);
+    const safeNext =
+      typeof next === "string" && next.startsWith("/") ? next : "/learn";
 
     const destination =
       teacherProfile?.charges_enabled && teacherProfile.stripe_account_id
@@ -68,6 +70,7 @@ export async function POST(req: NextRequest) {
       metadata: {
         courseId: course.id,
         userId: user.id,
+        next: safeNext,
       },
       payment_intent_data: destination
         ? {
@@ -75,8 +78,8 @@ export async function POST(req: NextRequest) {
             transfer_data: { destination },
           }
         : undefined,
-      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/courses/${course.id}`,
+      success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}&next=${encodeURIComponent(safeNext)}`,
+      cancel_url: `${origin}${safeNext}`,
     });
 
     if (!session.url) {

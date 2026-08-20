@@ -7,9 +7,11 @@ import { createClient } from "@/lib/supabase-browser";
 export default function EnrollButton({
   courseId,
   price,
+  next = "/learn",
 }: {
   courseId: string;
   price: number;
+  next?: string;
 }) {
   const supabase = createClient();
   const router = useRouter();
@@ -49,7 +51,7 @@ export default function EnrollButton({
     } = await supabase.auth.getUser();
 
     if (!user) {
-      router.push("/login");
+      router.push(`/login?next=${encodeURIComponent(next)}`);
       return;
     }
 
@@ -65,7 +67,7 @@ export default function EnrollButton({
     }
 
     setEnrolled(true);
-    router.push("/learn");
+    router.push(next);
     router.refresh();
   }
 
@@ -79,14 +81,14 @@ export default function EnrollButton({
       } = await supabase.auth.getUser();
 
       if (!user) {
-        router.push("/login");
+        router.push(`/login?next=${encodeURIComponent(next)}`);
         return;
       }
 
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ courseId }),
+        body: JSON.stringify({ courseId, next }),
       });
 
       const text = await res.text();
@@ -117,10 +119,10 @@ export default function EnrollButton({
   if (enrolled) {
     return (
       <a
-        href="/learn"
+        href={next}
         className="mt-6 inline-block rounded-lg bg-orange-500 px-6 py-3 font-medium hover:bg-orange-600"
       >
-        Continue learning
+        Continue
       </a>
     );
   }

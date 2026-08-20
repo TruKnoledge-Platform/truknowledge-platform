@@ -5,9 +5,10 @@ import { createClient } from "@/lib/supabase-server";
 export default async function CheckoutSuccessPage({
   searchParams,
 }: {
-  searchParams: Promise<{ session_id?: string }>;
+  searchParams: Promise<{ session_id?: string; next?: string }>;
 }) {
-  const { session_id } = await searchParams;
+  const { session_id, next } = await searchParams;
+  const returnTo = next && next.startsWith("/") ? next : "/learn";
 
   if (!session_id || !process.env.STRIPE_SECRET_KEY) {
     return (
@@ -17,8 +18,8 @@ export default async function CheckoutSuccessPage({
           <p className="mt-3 text-slate-400">
             We could not confirm the session, but you can check My courses.
           </p>
-          <Link href="/learn" className="mt-6 inline-block text-orange-400">
-            Go to my courses
+          <Link href={returnTo} className="mt-6 inline-block text-orange-400">
+            Continue
           </Link>
         </div>
       </main>
@@ -47,13 +48,13 @@ export default async function CheckoutSuccessPage({
         <p className="text-sm text-orange-400">Payment complete</p>
         <h1 className="mt-2 text-3xl font-semibold">You’re enrolled</h1>
         <p className="mt-3 text-slate-400">
-          This was a Stripe test payment. Your course is now in My courses.
+          This was a Stripe test payment. You can open the course now.
         </p>
         <Link
-          href="/learn"
+          href={returnTo}
           className="mt-6 inline-block rounded-lg bg-orange-500 px-6 py-3 font-medium hover:bg-orange-600"
         >
-          Go to my courses
+          Continue
         </Link>
       </div>
     </main>

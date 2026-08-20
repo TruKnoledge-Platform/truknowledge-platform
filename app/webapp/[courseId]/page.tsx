@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
+import EnrollButton from "@/app/courses/enroll-button";
 
 type Session = {
   id: string;
@@ -40,14 +41,52 @@ export default function WebAppPage() {
   const router = useRouter();
   const supabase = createClient();
   const [title, setTitle] = useState("");
+  const [price, setPrice] = useState(0);
   const [published, setPublished] = useState(false);
   const [enrolled, setEnrolled] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [currentId, setCurrentId] = useState("");
+  const [completed, setCompleted] = useState<Record<string, boolean>>({});
+  const [userId, setUserId] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [savingProgress, setSavingProgress] = useState(false);
+
+  async function markProgress(sessionId: string, isComplete: boolean) {
+    if (!userId || !sessionId) return;
+
+    const { data: existing, error: findError } = await supabase
+      .from("progress")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("session_id", sessionId)
+      .maybeSingle();
+
+    if (findError) {
+      setError(findError.message);
+      return;
+    }
+
+    const payload = {
+      user_id: userId,
+      session_id: sessionId,
+      completed: isComplete,
+      updated_at: new Date().toISOString(),
+    };
+
+    const { error: saveError } = existing
+      ? await supabase.from("progress").update(payload).eq("id", existing.id)
+      : await supabase.from("progress").insert(payload);
+
+    if (saveError) {
+      setError(saveError.message);
+      return;
+    }
+
+    setCompleted((prev) => ({ ...prev, [sessionId]: isComplete }));
+  }
 
   useEffect(() => {
     async function load() {
@@ -60,9 +99,11 @@ export default function WebAppPage() {
         return;
       }
 
+      setUserId(user.id);
+
       const { data: course, error: courseError } = await supabase
         .from("courses")
-        .select("title, is_published")
+        .select("title, is_published, price")
         .eq("id", courseId)
         .single();
 
@@ -73,6 +114,7 @@ export default function WebAppPage() {
       }
 
       setTitle(course.title);
+      setPrice(Number(course.price) || 0);
       setPublished(true);
 
       const { data: enrollment } = await supabase
@@ -104,6 +146,21 @@ export default function WebAppPage() {
             list.map((s) => s.id)
           );
         setMaterials(mats || []);
+
+        const { data: progressRows } = await supabase
+          .from("progress")
+          .select("session_id, completed")
+          .eq("user_id", user.id)
+          .in(
+            "session_id",
+            list.map((s) => s.id)
+          );
+
+        const map: Record<string, boolean> = {};
+        (progressRows || []).forEach((row) => {
+          map[row.session_id] = Boolean(row.completed);
+        });
+        setCompleted(map);
       }
 
       setLoading(false);
@@ -112,34 +169,19 @@ export default function WebAppPage() {
     load();
   }, [courseId]);
 
-  async function enroll() {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      router.push(`/login?next=/webapp/${courseId}`);
-      return;
-    }
-
-    const { error } = await supabase.from("enrollments").insert({
-      user_id: user.id,
-      course_id: courseId,
-      status: "active",
-    });
-
-    if (error) {
-      setError(error.message);
-      return;
-    }
-
-    setEnrolled(true);
-  }
-
   async function shareCourse() {
     const shareUrl = `${window.location.origin}/webapp/${courseId}`;
     await navigator.clipboard.writeText(shareUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  }
+
+  async function markComplete() {
+    if (!currentId) return;
+    setSavingProgress(true);
+    setError("");
+    await markProgress(currentId, true);
+    setSavingProgress(false);
   }
 
   const current = sessions.find((s) => s.id === currentId);
@@ -152,6 +194,7 @@ export default function WebAppPage() {
   const advancedMaterials = materials.filter(
     (m) => m.session_id === currentId && m.is_advanced
   );
+  const isComplete = Boolean(completed[currentId]);
 
   if (loading) {
     return (
@@ -189,13 +232,11 @@ export default function WebAppPage() {
         {published && !enrolled && (
           <div className="mt-6 rounded-2xl border border-slate-800 bg-[#111827] p-6">
             <p className="text-slate-300">Enroll to open this course Web App.</p>
-            <button
-              type="button"
-              onClick={enroll}
-              className="mt-4 rounded-lg bg-orange-500 px-6 py-3 font-medium hover:bg-orange-600"
-            >
-              Enroll
-            </button>
+            <EnrollButton
+              courseId={courseId}
+              price={price}
+              next={`/webapp/${courseId}`}
+            />
           </div>
         )}
 
@@ -229,6 +270,20 @@ export default function WebAppPage() {
               )}
             </div>
 
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm text-slate-400">
+                {isComplete ? "This session is complete" : "In this session"}
+              </p>
+              <button
+                type="button"
+                onClick={markComplete}
+                disabled={savingProgress || isComplete || !currentId}
+                className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium hover:bg-orange-600 disabled:opacity-60"
+              >
+                {isComplete ? "Completed" : savingProgress ? "Saving..." : "Mark complete"}
+              </button>
+            </div>
+
             <div className="mt-6">
               <label className="mb-2 block text-sm text-slate-300">Course sessions</label>
               <select
@@ -239,6 +294,7 @@ export default function WebAppPage() {
                 {sessions.map((session) => (
                   <option key={session.id} value={session.id}>
                     {session.order_index}. {session.title}
+                    {completed[session.id] ? " ✓" : ""}
                   </option>
                 ))}
               </select>
