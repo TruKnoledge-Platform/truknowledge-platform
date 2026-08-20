@@ -34,6 +34,7 @@ export default function EditCoursePage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [thumbnail, setThumbnail] = useState("");
+  const [previewVideo, setPreviewVideo] = useState("");
   const [price, setPrice] = useState("0");
   const [template, setTemplate] = useState("classic_linear");
   const [isPublished, setIsPublished] = useState(false);
@@ -83,7 +84,7 @@ export default function EditCoursePage() {
     async function loadCourse() {
       const { data, error } = await supabase
         .from("courses")
-        .select("title, description, template, is_published, thumbnail_url, price")
+        .select("title, description, template, is_published, thumbnail_url, price, preview_video_url")
         .eq("id", id)
         .single();
 
@@ -96,6 +97,7 @@ export default function EditCoursePage() {
       setTitle(data.title || "");
       setDescription(data.description || "");
       setThumbnail(data.thumbnail_url || "");
+      setPreviewVideo(data.preview_video_url || "");
       setPrice(String(data.price ?? 0));
       setTemplate(data.template || "classic_linear");
       setIsPublished(Boolean(data.is_published));
@@ -117,6 +119,7 @@ export default function EditCoursePage() {
         title,
         description,
         thumbnail_url: thumbnail,
+        preview_video_url: previewVideo,
         template,
         price: Number(price) || 0,
         updated_at: new Date().toISOString(),
@@ -306,6 +309,16 @@ export default function EditCoursePage() {
               value={thumbnail}
               onChange={(e) => setThumbnail(e.target.value)}
               placeholder="https://..."
+              className="w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm text-slate-300">Sneak peek video URL</label>
+            <input
+              value={previewVideo}
+              onChange={(e) => setPreviewVideo(e.target.value)}
+              placeholder="Paste a YouTube link"
               className="w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
             />
           </div>

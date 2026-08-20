@@ -2,6 +2,22 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
 import EnrollButton from "../enroll-button";
 
+function previewEmbed(url: string) {
+  try {
+    if (url.includes("youtube.com/watch")) {
+      const id = new URL(url).searchParams.get("v");
+      if (id) return `https://www.youtube.com/embed/${id}`;
+    }
+    if (url.includes("youtu.be/")) {
+      const id = url.split("youtu.be/")[1].split("?")[0];
+      if (id) return `https://www.youtube.com/embed/${id}`;
+    }
+  } catch {
+    return "";
+  }
+  return "";
+}
+
 export default async function CoursePage({
   params,
 }: {
@@ -12,7 +28,7 @@ export default async function CoursePage({
 
   const { data: course } = await supabase
     .from("courses")
-    .select("id, title, description, template, is_published, price")
+    .select("id, title, description, template, is_published, price, preview_video_url")
     .eq("id", id)
     .eq("is_published", true)
     .single();
@@ -26,6 +42,10 @@ export default async function CoursePage({
     .select("id, title, order_index")
     .eq("course_id", id)
     .order("order_index", { ascending: true });
+
+  const sneakPeek = course.preview_video_url
+    ? previewEmbed(course.preview_video_url)
+    : "";
 
   return (
     <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
@@ -44,6 +64,18 @@ export default async function CoursePage({
             ? `$${Number(course.price).toFixed(2)}`
             : "Free"}
         </p>
+
+        {sneakPeek && (
+          <div className="mt-6 aspect-video w-full overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
+            <iframe
+              src={sneakPeek}
+              title="Course sneak peek"
+              className="h-full w-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        )}
 
         <EnrollButton courseId={course.id} price={Number(course.price) || 0} />
 
