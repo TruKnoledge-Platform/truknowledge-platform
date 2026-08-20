@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import EnrollButton from "@/app/courses/enroll-button";
+import AddToHome from "@/app/add-to-home";
 
 type Session = {
   id: string;
@@ -213,6 +214,7 @@ export default function WebAppPage() {
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs uppercase tracking-wide text-slate-400">Web App</span>
+	<AddToHome />
             <button
               type="button"
               onClick={shareCourse}
