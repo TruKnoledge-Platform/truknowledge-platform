@@ -56,12 +56,23 @@ export default function EditCoursePage() {
   const [newSessionTitle, setNewSessionTitle] = useState("");
   const [materialTitle, setMaterialTitle] = useState<Record<string, string>>({});
   const [materialUrl, setMaterialUrl] = useState<Record<string, string>>({});
+  const [materialFile, setMaterialFile] = useState<Record<string, File | null>>({});
   const [materialAdvanced, setMaterialAdvanced] = useState<Record<string, boolean>>({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [adding, setAdding] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  async function uploadFile(file: File, folder: string) {
+    const safe = file.name.replace(/[^a-zA-Z0-9.\-]/g, "_");
+    const path = `${folder}/${id}/${Date.now()}-${safe}`;
+    const { error } = await supabase.storage.from("course-files").upload(path, file);
+    if (error) throw error;
+    const { data } = supabase.storage.from("course-files").getPublicUrl(path);
+    return data.publicUrl;
+  }
 
   async function loadSessions() {
     const { data } = await supabase
@@ -200,6 +211,19 @@ export default function EditCoursePage() {
     router.refresh();
   }
 
+  async function handleThumbnail(file: File | undefined) {
+    if (!file) return;
+    setUploading(true);
+    setError("");
+    try {
+      const url = await uploadFile(file, "thumbnails");
+      setThumbnail(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    }
+    setUploading(false);
+  }
+
   async function handleAddSession(e: React.FormEvent) {
     e.preventDefault();
     if (!newSessionTitle.trim()) return;
@@ -239,6 +263,17 @@ export default function EditCoursePage() {
     await loadEnrollments(rows);
   }
 
+  async function deleteMaterial(materialId: string) {
+    const ok = window.confirm("Delete this material?");
+    if (!ok) return;
+    const { error } = await supabase.from("materials").delete().eq("id", materialId);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    await loadSessions();
+  }
+
   async function handleTogglePublish() {
     setPublishing(true);
     setError("");
@@ -274,13 +309,25 @@ export default function EditCoursePage() {
 
   async function addMaterial(sessionId: string) {
     const titleValue = (materialTitle[sessionId] || "").trim();
-    const urlValue = (materialUrl[sessionId] || "").trim();
-    if (!titleValue || !urlValue) {
-      setError("Material needs a title and a link.");
+    const file = materialFile[sessionId];
+    let urlValue = (materialUrl[sessionId] || "").trim();
+
+    if (!titleValue || (!urlValue && !file)) {
+      setError("Material needs a title and a file or a link.");
       return;
     }
 
     setError("");
+    setUploading(true);
+    try {
+      if (file) urlValue = await uploadFile(file, "materials");
+    } catch (err) {
+      setUploading(false);
+      setError(err instanceof Error ? err.message : "Upload failed");
+      return;
+    }
+    setUploading(false);
+
     const { error } = await supabase.from("materials").insert({
       session_id: sessionId,
       title: titleValue,
@@ -295,6 +342,7 @@ export default function EditCoursePage() {
 
     setMaterialTitle((prev) => ({ ...prev, [sessionId]: "" }));
     setMaterialUrl((prev) => ({ ...prev, [sessionId]: "" }));
+    setMaterialFile((prev) => ({ ...prev, [sessionId]: null }));
     setMaterialAdvanced((prev) => ({ ...prev, [sessionId]: false }));
     await loadSessions();
   }
@@ -341,6 +389,7 @@ export default function EditCoursePage() {
           Status: {isPublished ? "Published" : "Draft"}
         </p>
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+        {uploading && <p className="mt-2 text-sm text-orange-400">Uploading...</p>}
 
         <details className="mt-6 rounded-2xl border border-slate-800 bg-[#111827] p-5">
           <summary className="cursor-pointer text-lg font-medium">
@@ -410,13 +459,32 @@ export default function EditCoursePage() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm text-slate-300">Course image URL</label>
+            <p className="mb-2 text-sm text-slate-300">Course image</p>
+            <label className="inline-flex cursor-pointer items-center rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium hover:bg-orange-600">
+              Upload course image
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => handleThumbnail(e.target.files?.[0])}
+              />
+            </label>
+            <p className="mt-2 text-xs text-slate-500">
+              Click the orange button. JPG or PNG. You can still paste a URL below.
+            </p>
             <input
               value={thumbnail}
               onChange={(e) => setThumbnail(e.target.value)}
               placeholder="https://..."
-              className="w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
+              className="mt-2 w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
             />
+            {thumbnail && (
+              <img
+                src={thumbnail}
+                alt="Course"
+                className="mt-3 w-[20%] rounded-lg border border-slate-800"
+              />
+            )}
           </div>
 
           <div>
@@ -514,16 +582,24 @@ export default function EditCoursePage() {
                   <p className="mb-2 text-sm text-slate-300">Materials</p>
                   <div className="mb-3 space-y-2">
                     {sessionMaterials.map((item) => (
-                      <a
-                        key={item.id}
-                        href={item.file_url || "#"}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block text-sm text-orange-400 hover:underline"
-                      >
-                        {item.title}
-                        {item.is_advanced ? " (advanced)" : ""}
-                      </a>
+                      <div key={item.id} className="flex items-center justify-between gap-2">
+                        <a
+                          href={item.file_url || "#"}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm text-orange-400 hover:underline"
+                        >
+                          {item.title}
+                          {item.is_advanced ? " (advanced)" : ""}
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => deleteMaterial(item.id)}
+                          className="text-xs text-red-400"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     ))}
                   </div>
 
@@ -535,12 +611,30 @@ export default function EditCoursePage() {
                     placeholder="Material title"
                     className="mb-2 w-full rounded-lg border border-slate-700 bg-[#0B1220] px-3 py-2 text-sm"
                   />
+                  <label className="mb-2 inline-flex cursor-pointer items-center rounded-lg border border-orange-500 px-4 py-2 text-sm text-orange-400">
+                    Upload file
+                    <input
+                      type="file"
+                      className="hidden"
+                      onChange={(e) =>
+                        setMaterialFile((prev) => ({
+                          ...prev,
+                          [session.id]: e.target.files?.[0] || null,
+                        }))
+                      }
+                    />
+                  </label>
+                  {materialFile[session.id] && (
+                    <p className="mb-2 text-xs text-slate-400">
+                      Selected: {materialFile[session.id]?.name}
+                    </p>
+                  )}
                   <input
                     value={materialUrl[session.id] || ""}
                     onChange={(e) =>
                       setMaterialUrl((prev) => ({ ...prev, [session.id]: e.target.value }))
                     }
-                    placeholder="Material link (PDF, Google Doc, etc.)"
+                    placeholder="Or paste a material link"
                     className="mb-2 w-full rounded-lg border border-slate-700 bg-[#0B1220] px-3 py-2 text-sm"
                   />
                   <label className="mb-3 flex items-center gap-2 text-sm text-slate-400">
