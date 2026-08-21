@@ -26,6 +26,15 @@ type Material = {
   is_advanced: boolean;
 };
 
+type Enrollment = {
+  id: string;
+  user_id: string;
+  status: string;
+  email: string;
+  completed: number;
+  messagesOptIn: boolean;
+};
+
 export default function EditCoursePage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -38,10 +47,12 @@ export default function EditCoursePage() {
   const [price, setPrice] = useState("0");
   const [template, setTemplate] = useState("classic_linear");
   const [isPublished, setIsPublished] = useState(false);
+  const [discussionsEnabled, setDiscussionsEnabled] = useState(false);
   const [webAppUrl, setWebAppUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
+  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [newSessionTitle, setNewSessionTitle] = useState("");
   const [materialTitle, setMaterialTitle] = useState<Record<string, string>>({});
   const [materialUrl, setMaterialUrl] = useState<Record<string, string>>({});
@@ -74,6 +85,53 @@ export default function EditCoursePage() {
     } else {
       setMaterials([]);
     }
+
+    return rows;
+  }
+
+  async function loadEnrollments(sessionRows: Session[]) {
+    const { data: enrollRows } = await supabase
+      .from("enrollments")
+      .select("id, user_id, status, messages_opt_in")
+      .eq("course_id", id)
+      .order("created_at", { ascending: false });
+
+    const list = enrollRows || [];
+    const userIds = list.map((row) => row.user_id);
+    const sessionIds = sessionRows.map((row) => row.id);
+
+    let profiles: { id: string; email: string | null }[] = [];
+    let progressRows: { user_id: string; session_id: string; completed: boolean }[] = [];
+
+    if (userIds.length) {
+      const { data: profileRows } = await supabase
+        .from("profiles")
+        .select("id, email")
+        .in("id", userIds);
+      profiles = profileRows || [];
+
+      if (sessionIds.length) {
+        const { data: prog } = await supabase
+          .from("progress")
+          .select("user_id, session_id, completed")
+          .in("user_id", userIds)
+          .in("session_id", sessionIds);
+        progressRows = prog || [];
+      }
+    }
+
+    setEnrollments(
+      list.map((row) => ({
+        id: row.id,
+        user_id: row.user_id,
+        status: row.status || "active",
+        email: profiles.find((p) => p.id === row.user_id)?.email || "Unknown learner",
+        completed: progressRows.filter(
+          (p) => p.user_id === row.user_id && p.completed
+        ).length,
+        messagesOptIn: Boolean(row.messages_opt_in),
+      }))
+    );
   }
 
   useEffect(() => {
@@ -84,7 +142,9 @@ export default function EditCoursePage() {
     async function loadCourse() {
       const { data, error } = await supabase
         .from("courses")
-        .select("title, description, template, is_published, thumbnail_url, price, preview_video_url")
+        .select(
+          "title, description, template, is_published, thumbnail_url, price, preview_video_url, discussions_enabled"
+        )
         .eq("id", id)
         .single();
 
@@ -101,7 +161,9 @@ export default function EditCoursePage() {
       setPrice(String(data.price ?? 0));
       setTemplate(data.template || "classic_linear");
       setIsPublished(Boolean(data.is_published));
-      await loadSessions();
+      setDiscussionsEnabled(Boolean(data.discussions_enabled));
+      const sessionRows = await loadSessions();
+      await loadEnrollments(sessionRows);
       setLoading(false);
     }
 
@@ -122,6 +184,7 @@ export default function EditCoursePage() {
         preview_video_url: previewVideo,
         template,
         price: Number(price) || 0,
+        discussions_enabled: discussionsEnabled,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id);
@@ -264,6 +327,34 @@ export default function EditCoursePage() {
         </p>
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
 
+        <details className="mt-6 rounded-2xl border border-slate-800 bg-[#111827] p-5">
+          <summary className="cursor-pointer text-lg font-medium">
+            Who enrolled ({enrollments.length})
+          </summary>
+          <div className="mt-4 space-y-2">
+            {!enrollments.length && (
+              <p className="text-sm text-slate-400">No enrollments yet.</p>
+            )}
+            {enrollments.map((item) => (
+              <div
+                key={item.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-800 px-3 py-2"
+              >
+                <div>
+                  <p className="text-sm">{item.email}</p>
+                  <p className="text-xs text-slate-500">
+                    {item.status}
+                    {item.messagesOptIn ? " · messages on" : " · messages off"}
+                  </p>
+                </div>
+                <p className="text-xs text-orange-400">
+                  {item.completed} / {sessions.length} sessions complete
+                </p>
+              </div>
+            ))}
+          </div>
+        </details>
+
         <section className="mt-6 rounded-2xl border border-orange-500/40 bg-[#111827] p-5">
           <h2 className="text-lg font-medium">Web App</h2>
           <p className="mt-1 text-sm text-slate-400">
@@ -350,6 +441,15 @@ export default function EditCoursePage() {
               ))}
             </select>
           </div>
+
+          <label className="flex items-center gap-2 text-sm text-slate-300">
+            <input
+              type="checkbox"
+              checked={discussionsEnabled}
+              onChange={(e) => setDiscussionsEnabled(e.target.checked)}
+            />
+            Enable discussion on this course
+          </label>
 
           <button
             type="submit"

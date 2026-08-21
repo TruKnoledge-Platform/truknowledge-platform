@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
+import CourseDiscussion from "@/app/courses/course-discussion";
 
 type Session = {
   id: string;
@@ -247,6 +248,8 @@ export default function PlayCoursePage() {
             </video>
           )}
         </div>
+
+        <CourseDiscussion courseId={courseId} />
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-slate-400">

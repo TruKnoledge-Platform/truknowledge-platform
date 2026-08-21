@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
 import EnrollButton from "../enroll-button";
 import ReviewForm from "../review-form";
+import CourseDiscussion from "../course-discussion";
 
 function previewEmbed(url: string) {
   try {
@@ -29,7 +30,9 @@ export default async function CoursePage({
 
   const { data: course } = await supabase
     .from("courses")
-    .select("id, title, description, template, is_published, price, preview_video_url")
+    .select(
+      "id, title, description, template, is_published, price, preview_video_url, discussions_enabled"
+    )
     .eq("id", id)
     .eq("is_published", true)
     .single();
@@ -114,6 +117,11 @@ export default async function CoursePage({
             ))}
           </div>
         </section>
+
+        <CourseDiscussion
+          courseId={course.id}
+          enabled={Boolean(course.discussions_enabled)}
+        />
 
         <ReviewForm courseId={course.id} />
 
