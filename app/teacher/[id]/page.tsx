@@ -224,6 +224,21 @@ export default function EditCoursePage() {
     await loadSessions();
   }
 
+  async function deleteSession(sessionId: string) {
+    const ok = window.confirm("Delete this session and its materials?");
+    if (!ok) return;
+
+    setError("");
+    const { error } = await supabase.from("sessions").delete().eq("id", sessionId);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    const rows = await loadSessions();
+    await loadEnrollments(rows);
+  }
+
   async function handleTogglePublish() {
     setPublishing(true);
     setError("");
@@ -475,9 +490,18 @@ export default function EditCoursePage() {
                   key={session.id}
                   className="rounded-xl border border-slate-800 bg-[#111827] p-4"
                 >
-                  <div className="mb-3">
-                    <span className="text-sm text-orange-400">{session.order_index}</span>
-                    <span className="ml-3 font-medium">{session.title}</span>
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <span className="text-sm text-orange-400">{session.order_index}</span>
+                      <span className="ml-3 font-medium">{session.title}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => deleteSession(session.id)}
+                      className="rounded-lg border border-red-500 px-3 py-1.5 text-sm text-red-400"
+                    >
+                      Delete session
+                    </button>
                   </div>
 
                   <input
