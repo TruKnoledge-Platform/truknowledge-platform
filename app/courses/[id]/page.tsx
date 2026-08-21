@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
 import EnrollButton from "../enroll-button";
+import ReviewForm from "../review-form";
 
 function previewEmbed(url: string) {
   try {
@@ -43,9 +44,20 @@ export default async function CoursePage({
     .eq("course_id", id)
     .order("order_index", { ascending: true });
 
+  const { data: reviews } = await supabase
+    .from("reviews")
+    .select("id, rating, comment, created_at")
+    .eq("course_id", id)
+    .order("created_at", { ascending: false });
+
   const sneakPeek = course.preview_video_url
     ? previewEmbed(course.preview_video_url)
     : "";
+
+  const average =
+    reviews && reviews.length
+      ? reviews.reduce((sum, item) => sum + item.rating, 0) / reviews.length
+      : 0;
 
   return (
     <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
@@ -64,6 +76,12 @@ export default async function CoursePage({
             ? `$${Number(course.price).toFixed(2)}`
             : "Free"}
         </p>
+        {reviews && reviews.length > 0 && (
+          <p className="mt-1 text-sm text-slate-400">
+            {average.toFixed(1)} / 5 · {reviews.length}{" "}
+            {reviews.length === 1 ? "review" : "reviews"}
+          </p>
+        )}
 
         {sneakPeek && (
           <div className="mt-6 aspect-video w-full overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
@@ -92,6 +110,28 @@ export default async function CoursePage({
               >
                 <span className="text-sm text-orange-400">{session.order_index}</span>
                 <span className="ml-3">{session.title}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <ReviewForm courseId={course.id} />
+
+        <section className="mt-6">
+          <h2 className="text-lg font-semibold">Reviews</h2>
+          <div className="mt-3 space-y-2">
+            {!reviews?.length && (
+              <p className="text-sm text-slate-400">No reviews yet.</p>
+            )}
+            {reviews?.map((review) => (
+              <div
+                key={review.id}
+                className="rounded-xl border border-slate-800 bg-[#111827] px-4 py-3"
+              >
+                <p className="text-xs text-orange-400">{review.rating} / 5</p>
+                <p className="mt-1 text-sm text-slate-300">
+                  {review.comment || "No written comment."}
+                </p>
               </div>
             ))}
           </div>
