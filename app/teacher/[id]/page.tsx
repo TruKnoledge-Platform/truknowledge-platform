@@ -248,6 +248,31 @@ export default function EditCoursePage() {
     await loadSessions();
   }
 
+  async function moveSession(sessionId: string, direction: -1 | 1) {
+    const index = sessions.findIndex((s) => s.id === sessionId);
+    const other = sessions[index + direction];
+    if (index < 0 || !other) return;
+
+    const current = sessions[index];
+    setError("");
+
+    const { error: firstError } = await supabase
+      .from("sessions")
+      .update({ order_index: other.order_index })
+      .eq("id", current.id);
+    const { error: secondError } = await supabase
+      .from("sessions")
+      .update({ order_index: current.order_index })
+      .eq("id", other.id);
+
+    if (firstError || secondError) {
+      setError(firstError?.message || secondError?.message || "Could not reorder");
+      return;
+    }
+
+    await loadSessions();
+  }
+
   async function deleteSession(sessionId: string) {
     const ok = window.confirm("Delete this session and its materials?");
     if (!ok) return;
@@ -546,12 +571,12 @@ export default function EditCoursePage() {
         <section className="mt-12">
           <h2 className="text-xl font-semibold">Sessions</h2>
           <p className="mt-1 text-sm text-slate-400">
-            Add a video link and materials for each session.
+            Add a video link and materials for each session. Use Up / Down to reorder.
           </p>
 
           <div className="mt-4 space-y-4">
             {sessions.length === 0 && <p className="text-slate-400">No sessions yet.</p>}
-            {sessions.map((session) => {
+            {sessions.map((session, index) => {
               const sessionMaterials = materials.filter((m) => m.session_id === session.id);
               return (
                 <div
@@ -560,16 +585,34 @@ export default function EditCoursePage() {
                 >
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                     <div>
-                      <span className="text-sm text-orange-400">{session.order_index}</span>
+                      <span className="text-sm text-orange-400">{index + 1}</span>
                       <span className="ml-3 font-medium">{session.title}</span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => deleteSession(session.id)}
-                      className="rounded-lg border border-red-500 px-3 py-1.5 text-sm text-red-400"
-                    >
-                      Delete session
-                    </button>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => moveSession(session.id, -1)}
+                        disabled={index === 0}
+                        className="rounded-lg border border-slate-600 px-3 py-1.5 text-sm disabled:opacity-40"
+                      >
+                        Up
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveSession(session.id, 1)}
+                        disabled={index === sessions.length - 1}
+                        className="rounded-lg border border-slate-600 px-3 py-1.5 text-sm disabled:opacity-40"
+                      >
+                        Down
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteSession(session.id)}
+                        className="rounded-lg border border-red-500 px-3 py-1.5 text-sm text-red-400"
+                      >
+                        Delete session
+                      </button>
+                    </div>
                   </div>
 
                   <input
