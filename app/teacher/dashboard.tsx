@@ -16,6 +16,12 @@ type Payment = {
   created_at: string;
 };
 
+type Place = {
+  country: string;
+  region: string | null;
+  count: number;
+};
+
 const COLORS = ["#f97316", "#38bdf8", "#a78bfa", "#34d399", "#f472b6", "#facc15"];
 
 function bucketKey(date: Date, range: "day" | "week" | "month") {
@@ -47,14 +53,17 @@ function makeBuckets(range: "day" | "week" | "month") {
 export default function TeacherDashboard({
   courses,
   payments,
+  places,
 }: {
   courses: CourseStat[];
   payments: Payment[];
+  places: Place[];
 }) {
   const [range, setRange] = useState<"day" | "week" | "month">("week");
   const labels = useMemo(() => makeBuckets(range), [range]);
   const maxEnroll = Math.max(1, ...courses.map((c) => c.enrollments));
   const maxViews = Math.max(1, ...courses.map((c) => c.views));
+  const maxPlace = Math.max(1, ...places.map((p) => p.count));
 
   const series = courses.map((course, index) => {
     const points = labels.map((label) =>
@@ -91,7 +100,7 @@ export default function TeacherDashboard({
           <div>
             <h2 className="text-lg font-medium">Income</h2>
             <p className="text-sm text-slate-400">
-              Each line is a course. Fills in when paid enrollments are recorded.
+              Each line is a course. New paid enrollments appear here.
             </p>
           </div>
           <div className="flex gap-2 text-sm">
@@ -146,7 +155,7 @@ export default function TeacherDashboard({
       <section className="rounded-2xl border border-slate-800 bg-[#111827] p-5">
         <h2 className="text-lg font-medium">Enrollments and views</h2>
         <p className="text-sm text-slate-400">
-          Columns per course. Views start counting on the next visits.
+          Orange = enrolled. The second column = visits to the course.
         </p>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           {courses.map((course, index) => (
@@ -184,12 +193,35 @@ export default function TeacherDashboard({
         </div>
       </section>
 
-      <section className="rounded-2xl border border-dashed border-slate-700 bg-[#111827] p-5">
+      <section className="rounded-2xl border border-slate-800 bg-[#111827] p-5">
         <h2 className="text-lg font-medium">Where learners are</h2>
-        <p className="mt-2 text-sm text-slate-400">
-          Map is next. We’ll record a general location at enroll, then show
-          countries/regions — not a street address.
+        <p className="mt-1 text-sm text-slate-400">
+          Country and region only — not a street address.
         </p>
+        <div className="mt-4 space-y-3">
+          {!places.length && (
+            <p className="text-sm text-slate-500">
+              No locations yet. A new enroll will add the first one.
+            </p>
+          )}
+          {places.map((place) => (
+            <div key={`${place.country}-${place.region}`}>
+              <div className="mb-1 flex justify-between text-sm">
+                <span>
+                  {place.country}
+                  {place.region ? `, ${place.region}` : ""}
+                </span>
+                <span className="text-slate-400">{place.count}</span>
+              </div>
+              <div className="h-2 overflow-hidden rounded bg-slate-800">
+                <div
+                  className="h-full bg-orange-500"
+                  style={{ width: `${(place.count / maxPlace) * 100}%` }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       </section>
     </div>
   );

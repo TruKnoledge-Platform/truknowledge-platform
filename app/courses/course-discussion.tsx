@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
+import RecordView from "@/app/record-view";
 
 type Comment = {
   id: string;
@@ -12,26 +13,39 @@ type Comment = {
 
 export default function CourseDiscussion({
   courseId,
-  enabled,
 }: {
   courseId: string;
-  enabled: boolean;
+  enabled?: boolean;
 }) {
   const supabase = createClient();
   const [userId, setUserId] = useState("");
   const [enrolled, setEnrolled] = useState(false);
+  const [discussionsOn, setDiscussionsOn] = useState(false);
   const [optIn, setOptIn] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [body, setBody] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+
+      const { data: course } = await supabase
+        .from("courses")
+        .select("discussions_enabled")
+        .eq("id", courseId)
+        .single();
+
+      setDiscussionsOn(Boolean(course?.discussions_enabled));
+
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       setUserId(user.id);
 
@@ -42,11 +56,12 @@ export default function CourseDiscussion({
         .eq("course_id", courseId)
         .maybeSingle();
 
-      if (!enrollment) return;
-      setEnrolled(true);
-      setOptIn(Boolean(enrollment.messages_opt_in));
+      if (enrollment) {
+        setEnrolled(true);
+        setOptIn(Boolean(enrollment.messages_opt_in));
+      }
 
-      if (enabled) {
+      if (course?.discussions_enabled) {
         const { data } = await supabase
           .from("course_comments")
           .select("id, body, created_at, user_id")
@@ -54,23 +69,27 @@ export default function CourseDiscussion({
           .order("created_at", { ascending: true });
         setComments(data || []);
       }
+
+      setLoading(false);
     }
 
     load();
-  }, [courseId, enabled]);
+  }, [courseId]);
 
   async function saveOptIn(next: boolean) {
+    if (!userId) return;
     setOptIn(next);
-    await supabase
+    const { error } = await supabase
       .from("enrollments")
       .update({ messages_opt_in: next })
       .eq("user_id", userId)
       .eq("course_id", courseId);
+    if (error) setError(error.message);
   }
 
   async function addComment(e: React.FormEvent) {
     e.preventDefault();
-    if (!body.trim()) return;
+    if (!body.trim() || !userId) return;
     setSaving(true);
     setError("");
 
@@ -94,22 +113,43 @@ export default function CourseDiscussion({
     setBody("");
   }
 
-  if (!enrolled) return null;
-
   return (
-    <section className="mt-6 rounded-xl border border-slate-800 bg-[#111827] p-4">
-      <label className="flex items-center gap-2 text-sm text-slate-300">
-        <input
-          type="checkbox"
-          checked={optIn}
-          onChange={(e) => saveOptIn(e.target.checked)}
-        />
-        Teacher may message me about this course
-      </label>
+    <section className="mt-6 rounded-xl border border-orange-500/40 bg-[#111827] p-4">
+      <RecordView courseId={courseId} />
+      <h2 className="text-base font-medium">Messages & discussion</h2>
 
-      {enabled && (
+      {loading && <p className="mt-2 text-sm text-slate-400">Loading...</p>}
+
+      {!loading && !userId && (
+        <p className="mt-2 text-sm text-slate-400">Log in to join the discussion.</p>
+      )}
+
+      {!loading && userId && !enrolled && (
+        <p className="mt-2 text-sm text-slate-400">
+          Enroll in this course to comment and to allow teacher messages.
+        </p>
+      )}
+
+      {!loading && enrolled && (
+        <label className="mt-3 flex items-center gap-2 text-sm text-slate-300">
+          <input
+            type="checkbox"
+            checked={optIn}
+            onChange={(e) => saveOptIn(e.target.checked)}
+          />
+          Teacher may message me about this course
+        </label>
+      )}
+
+      {!loading && enrolled && !discussionsOn && (
+        <p className="mt-3 text-sm text-slate-500">
+          The teacher has not opened discussion on this course yet.
+        </p>
+      )}
+
+      {!loading && enrolled && discussionsOn && (
         <div className="mt-4">
-          <h2 className="text-base font-medium">Discussion</h2>
+          <p className="text-sm text-slate-400">Discussion</p>
           <div className="mt-3 max-h-56 space-y-2 overflow-y-auto">
             {!comments.length && (
               <p className="text-sm text-slate-400">No comments yet.</p>

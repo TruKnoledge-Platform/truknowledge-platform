@@ -4,6 +4,20 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 
+async function detectPlace() {
+  try {
+    const res = await fetch("https://ipwho.is/");
+    const place = await res.json();
+    if (!place?.success) return { country: null, region: null };
+    return {
+      country: place.country || null,
+      region: place.region || null,
+    };
+  } catch {
+    return { country: null, region: null };
+  }
+}
+
 export default function EnrollButton({
   courseId,
   price,
@@ -55,10 +69,13 @@ export default function EnrollButton({
       return;
     }
 
+    const place = await detectPlace();
     const { error } = await supabase.from("enrollments").insert({
       user_id: user.id,
       course_id: courseId,
       status: "active",
+      country: place.country,
+      region: place.region,
     });
 
     if (error) {

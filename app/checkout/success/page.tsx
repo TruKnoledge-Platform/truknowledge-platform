@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase-server";
+import SavePlace from "@/app/save-place";
 
 export default async function CheckoutSuccessPage({
   searchParams,
@@ -9,6 +10,7 @@ export default async function CheckoutSuccessPage({
 }) {
   const { session_id, next } = await searchParams;
   const returnTo = next && next.startsWith("/") ? next : "/learn";
+  let courseId = "";
 
   if (!session_id || !process.env.STRIPE_SECRET_KEY) {
     return (
@@ -28,7 +30,7 @@ export default async function CheckoutSuccessPage({
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const session = await stripe.checkout.sessions.retrieve(session_id);
-  const courseId = session.metadata?.courseId;
+  courseId = session.metadata?.courseId || "";
   const supabase = await createClient();
   const {
     data: { user },
@@ -40,10 +42,27 @@ export default async function CheckoutSuccessPage({
       course_id: courseId,
       status: "active",
     });
+
+    const { data: course } = await supabase
+      .from("courses")
+      .select("teacher_id")
+      .eq("id", courseId)
+      .single();
+
+    if (course?.teacher_id) {
+      await supabase.from("payments").insert({
+        course_id: courseId,
+        teacher_id: course.teacher_id,
+        user_id: user.id,
+        amount: (session.amount_total || 0) / 100,
+        stripe_session_id: session_id,
+      });
+    }
   }
 
   return (
     <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
+      {courseId && <SavePlace courseId={courseId} />}
       <div className="mx-auto max-w-xl rounded-2xl border border-slate-800 bg-[#111827] p-8">
         <p className="text-sm text-orange-400">Payment complete</p>
         <h1 className="mt-2 text-3xl font-semibold">You’re enrolled</h1>

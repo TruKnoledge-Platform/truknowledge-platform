@@ -23,8 +23,11 @@ export default async function TeacherPage() {
   const courseIds = list.map((course) => course.id);
 
   const { data: enrollments } = courseIds.length
-    ? await supabase.from("enrollments").select("course_id").in("course_id", courseIds)
-    : { data: [] as { course_id: string }[] };
+    ? await supabase
+        .from("enrollments")
+        .select("course_id, country, region")
+        .in("course_id", courseIds)
+    : { data: [] as { course_id: string; country: string | null; region: string | null }[] };
 
   const { data: views } = courseIds.length
     ? await supabase.from("course_views").select("course_id").in("course_id", courseIds)
@@ -43,6 +46,15 @@ export default async function TeacherPage() {
       .length,
     views: (views || []).filter((row) => row.course_id === course.id).length,
   }));
+
+  const placeMap = new Map<string, { country: string; region: string | null; count: number }>();
+  (enrollments || []).forEach((row) => {
+    if (!row.country) return;
+    const key = `${row.country}::${row.region || ""}`;
+    const current = placeMap.get(key);
+    if (current) current.count += 1;
+    else placeMap.set(key, { country: row.country, region: row.region, count: 1 });
+  });
 
   return (
     <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
@@ -71,7 +83,11 @@ export default async function TeacherPage() {
           </div>
         </div>
 
-        <TeacherDashboard courses={stats} payments={payments || []} />
+        <TeacherDashboard
+          courses={stats}
+          payments={payments || []}
+          places={[...placeMap.values()].sort((a, b) => b.count - a.count)}
+        />
 
         <section className="mt-10">
           <h2 className="mb-4 text-xl font-medium">Courses</h2>
