@@ -16,6 +16,7 @@ type Session = {
   title: string;
   order_index: number;
   video_url: string | null;
+  body: string | null;
 };
 
 type Material = {
@@ -77,7 +78,7 @@ export default function EditCoursePage() {
   async function loadSessions() {
     const { data } = await supabase
       .from("sessions")
-      .select("id, title, order_index, video_url")
+      .select("id, title, order_index, video_url, body")
       .eq("course_id", id)
       .order("order_index", { ascending: true });
 
@@ -322,6 +323,21 @@ export default function EditCoursePage() {
     setIsPublished(nextValue);
   }
 
+  async function saveSessionTitle(sessionId: string, nextTitle: string) {
+    const value = nextTitle.trim();
+    if (!value) return;
+    setError("");
+    const { error } = await supabase
+      .from("sessions")
+      .update({ title: value })
+      .eq("id", sessionId);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    await loadSessions();
+  }
+
   async function saveSessionVideo(sessionId: string, videoUrl: string) {
     setError("");
     const { error } = await supabase
@@ -329,6 +345,15 @@ export default function EditCoursePage() {
       .update({ video_url: videoUrl })
       .eq("id", sessionId);
 
+    if (error) setError(error.message);
+  }
+
+  async function saveSessionBody(sessionId: string, body: string) {
+    setError("");
+    const { error } = await supabase
+      .from("sessions")
+      .update({ body })
+      .eq("id", sessionId);
     if (error) setError(error.message);
   }
 
@@ -571,7 +596,7 @@ export default function EditCoursePage() {
         <section className="mt-12">
           <h2 className="text-xl font-semibold">Sessions</h2>
           <p className="mt-1 text-sm text-slate-400">
-            Add a video link and materials for each session. Use Up / Down to reorder.
+            Click a session name to rename it. Session notes save when you click outside the box.
           </p>
 
           <div className="mt-4 space-y-4">
@@ -584,9 +609,14 @@ export default function EditCoursePage() {
                   className="rounded-xl border border-slate-800 bg-[#111827] p-4"
                 >
                   <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <div>
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
                       <span className="text-sm text-orange-400">{index + 1}</span>
-                      <span className="ml-3 font-medium">{session.title}</span>
+                      <input
+                        defaultValue={session.title}
+                        key={`${session.id}-${session.title}`}
+                        onBlur={(e) => saveSessionTitle(session.id, e.target.value)}
+                        className="min-w-0 flex-1 rounded-lg border border-slate-700 bg-[#0B1220] px-2 py-1 font-medium"
+                      />
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <button
@@ -618,8 +648,18 @@ export default function EditCoursePage() {
                   <input
                     defaultValue={session.video_url || ""}
                     placeholder="Paste video URL here"
-                    className="mb-4 w-full rounded-lg border border-slate-700 bg-[#0B1220] px-3 py-2 text-sm"
+                    className="mb-3 w-full rounded-lg border border-slate-700 bg-[#0B1220] px-3 py-2 text-sm"
                     onBlur={(e) => saveSessionVideo(session.id, e.target.value)}
+                  />
+
+                  <p className="mb-2 text-sm text-slate-300">Session notes</p>
+                  <textarea
+                    defaultValue={session.body || ""}
+                    key={`${session.id}-body-${session.body || ""}`}
+                    placeholder="Write the information for this session"
+                    rows={6}
+                    className="mb-4 w-full rounded-lg border border-slate-700 bg-[#0B1220] px-3 py-2 text-sm"
+                    onBlur={(e) => saveSessionBody(session.id, e.target.value)}
                   />
 
                   <p className="mb-2 text-sm text-slate-300">Materials</p>
