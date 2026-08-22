@@ -34,7 +34,7 @@ function youtubeId(url: string) {
 }
 
 export default function WebAppPage() {
-  const { courseId; id } = useParams<{ courseId: string }>();
+  const { courseId: id } = useParams<{ courseId: string }>();
   const supabase = createClient();
 
   const [title, setTitle] = useState("");

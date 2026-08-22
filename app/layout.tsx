@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -15,7 +15,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "TruKnowledge",
   description: "People teaching people. Courses and Web Apps.",
-  themeColor: "#0B1220",
   appleWebApp: {
     capable: true,
     title: "TruKnowledge",
@@ -25,6 +24,10 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
     apple: "/favicon.ico",
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0B1220",
 };
 
 export default function RootLayout({
