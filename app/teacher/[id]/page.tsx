@@ -421,18 +421,26 @@ export default function EditCoursePage() {
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-3xl font-semibold">Edit course</h1>
-          <button
-            type="button"
-            onClick={handleTogglePublish}
-            disabled={publishing}
-            className={`rounded-lg px-4 py-2 font-medium ${
-              isPublished
-                ? "border border-slate-600 text-slate-200"
-                : "bg-orange-500 hover:bg-orange-600"
-            }`}
-          >
-            {publishing ? "Updating..." : isPublished ? "Unpublish" : "Publish"}
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href={`/courses/${id}`}
+              className="rounded-lg border border-slate-600 px-4 py-2 text-sm"
+            >
+              Preview
+            </a>
+            <button
+              type="button"
+              onClick={handleTogglePublish}
+              disabled={publishing}
+              className={`rounded-lg px-4 py-2 font-medium ${
+                isPublished
+                  ? "border border-slate-600 text-slate-200"
+                  : "bg-orange-500 hover:bg-orange-600"
+              }`}
+            >
+              {publishing ? "Updating..." : isPublished ? "Unpublish" : "Publish"}
+            </button>
+          </div>
         </div>
 
         <p className="mt-2 text-sm text-slate-400">

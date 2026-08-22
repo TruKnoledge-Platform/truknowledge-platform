@@ -38,6 +38,12 @@ export default async function TeacherPage() {
     .select("course_id, amount, created_at")
     .eq("teacher_id", user.id);
 
+  const { count: unreadCount } = await supabase
+    .from("messages")
+    .select("*", { count: "exact", head: true })
+    .eq("recipient_id", user.id)
+    .is("read_at", null);
+
   const stats = list.map((course) => ({
     id: course.id,
     title: course.title,
@@ -70,9 +76,14 @@ export default async function TeacherPage() {
             </a>
             <a
               href="/teacher/messages"
-              className="rounded-lg border border-orange-500 px-4 py-2 text-sm text-orange-400"
+              className="relative rounded-lg border border-orange-500 px-4 py-2 text-sm text-orange-400"
             >
               Messages
+              {(unreadCount || 0) > 0 && (
+                <span className="ml-2 rounded-full bg-orange-500 px-2 py-0.5 text-xs text-white">
+                  {unreadCount}
+                </span>
+              )}
             </a>
             <a
               href="/payouts"
