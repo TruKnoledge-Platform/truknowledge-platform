@@ -11,13 +11,13 @@ export default async function PayoutsPage() {
     redirect("/login?next=/payouts");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("stripe_account_id")
-    .eq("id", user.id)
+  const { data: teacher } = await supabase
+    .from("teacher_profiles")
+    .select("stripe_account_id, charges_enabled")
+    .eq("user_id", user.id)
     .maybeSingle();
 
-  const connected = Boolean(profile?.stripe_account_id);
+  const connected = Boolean(teacher?.stripe_account_id);
 
   return (
     <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
@@ -33,12 +33,13 @@ export default async function PayoutsPage() {
 
         {connected ? (
           <p className="mt-6 rounded-xl border border-slate-800 bg-[#111827] p-4 text-sm text-slate-300">
-            Stripe is connected. If payouts are still pending, Stripe is still
-            confirming the account. That can take a while.
+            {teacher?.charges_enabled
+              ? "Stripe is connected and can receive payouts."
+              : "Stripe is connected. Confirmation can still take a while."}
           </p>
         ) : (
           <p className="mt-6 text-sm text-slate-400">
-            Not connected yet. Use the live site (https), not localhost.
+            Not connected yet. Click the button below.
           </p>
         )}
 

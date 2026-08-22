@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase-server";
 
 function getStripe() {
@@ -25,13 +25,13 @@ export async function GET() {
     return NextResponse.redirect(new URL("/login?next=/payouts", origin));
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
+  const { data: teacher } = await supabase
+    .from("teacher_profiles")
     .select("stripe_account_id")
-    .eq("id", user.id)
+    .eq("user_id", user.id)
     .maybeSingle();
 
-  let accountId = profile?.stripe_account_id as string | null;
+  let accountId = teacher?.stripe_account_id as string | null;
 
   if (!accountId) {
     const account = await stripe.accounts.create({
@@ -40,10 +40,11 @@ export async function GET() {
       metadata: { userId: user.id },
     });
     accountId = account.id;
-    await supabase
-      .from("profiles")
-      .update({ stripe_account_id: accountId })
-      .eq("id", user.id);
+
+    await supabase.from("teacher_profiles").upsert({
+      user_id: user.id,
+      stripe_account_id: accountId,
+    });
   }
 
   const link = await stripe.accountLinks.create({
