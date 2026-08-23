@@ -39,6 +39,33 @@ export async function unlistTeacher(formData: FormData) {
   redirect(`/owner/people/${teacherId}`);
 }
 
+export async function relistTeacher(formData: FormData) {
+  const { supabase } = await requireOwner();
+  const teacherId = String(formData.get("teacherId") || "");
+  if (!teacherId) redirect("/owner/people");
+  await supabase
+    .from("courses")
+    .update({ owner_paused: false })
+    .eq("teacher_id", teacherId);
+  redirect(`/owner/people/${teacherId}`);
+}
+
+export async function unlistMember(formData: FormData) {
+  const { supabase } = await requireOwner();
+  const id = String(formData.get("teacherId") || formData.get("id") || "");
+  if (!id) redirect("/owner/people");
+  await supabase.from("profiles").update({ is_paused: true }).eq("id", id);
+  redirect(`/owner/people/${id}`);
+}
+
+export async function relistMember(formData: FormData) {
+  const { supabase } = await requireOwner();
+  const id = String(formData.get("teacherId") || formData.get("id") || "");
+  if (!id) redirect("/owner/people");
+  await supabase.from("profiles").update({ is_paused: false }).eq("id", id);
+  redirect(`/owner/people/${id}`);
+}
+
 export async function deleteCourse(formData: FormData) {
   const { supabase } = await requireOwner();
   const id = String(formData.get("id") || "");
