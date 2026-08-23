@@ -35,6 +35,7 @@ export default async function CoursePage({
     )
     .eq("id", id)
     .eq("is_published", true)
+	.eq("owner_paused", false)
     .single();
 
   if (!course) {

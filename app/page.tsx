@@ -10,6 +10,7 @@ export default async function Home() {
     .from("courses")
     .select("id, title, thumbnail_url")
     .eq("is_published", true)
+	.eq("owner_paused", false)
     .order("created_at", { ascending: false })
     .limit(3);
 
