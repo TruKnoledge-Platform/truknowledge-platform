@@ -25,6 +25,12 @@ export default async function UnlistedPage({
 
   const { sent } = await searchParams;
 
+  const { data: thread } = await supabase
+    .from("owner_contacts")
+    .select("id, sender_id, member_id, body, created_at")
+    .or(`member_id.eq.${user.id},sender_id.eq.${user.id}`)
+    .order("created_at", { ascending: true });
+
   return (
     <main className="min-h-screen bg-[#0B1020] text-[#F3E6D2] px-6 py-10">
       <div className="mx-auto max-w-lg">
@@ -36,19 +42,34 @@ export default async function UnlistedPage({
         </h1>
         <p className="mt-4 text-[16px] leading-7 text-[#F3E6D2]/85">
           You can still sign in, but this account cannot take courses right
-          now. If you think this is a mistake, send a message below. The
-          owner of TruKnowledge will read it.
+          now. The full message chain with TruKnowledge is below.
         </p>
 
+        <div className="mt-8 space-y-3">
+          {(thread || []).map((note) => (
+            <div
+              key={note.id}
+              className="rounded-xl border border-white/10 bg-[#12182A] p-4"
+            >
+              <p className="text-xs text-[#9AA3B5]">
+                {note.sender_id === user.id ? "You" : "TruKnowledge"} ·{" "}
+                {new Date(note.created_at).toLocaleString()}
+              </p>
+              <p className="mt-2 whitespace-pre-wrap">{note.body}</p>
+            </div>
+          ))}
+          {!thread?.length && (
+            <p className="text-sm text-[#9AA3B5]">No messages yet.</p>
+          )}
+        </div>
+
         {sent && (
-          <p className="mt-6 text-sm text-[#E8A24A]">
-            Message sent. You can wait here until the account is re-enlisted.
-          </p>
+          <p className="mt-4 text-sm text-[#E8A24A]">Message sent.</p>
         )}
 
-        <form action={sendOwnerContact} className="mt-8 space-y-3">
+        <form action={sendOwnerContact} className="mt-6 space-y-3">
           <label className="block text-sm text-[#9AA3B5]">
-            Contact us
+            Write a message
             <textarea
               name="body"
               required
