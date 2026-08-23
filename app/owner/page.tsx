@@ -95,10 +95,10 @@ export default async function OwnerHome() {
 
         <p className="mt-8">
           <a href="/owner/people" className="text-[#E8A24A] hover:underline">
-            People — pause accounts →
+            People — teachers and members →
           </a>
         </p>
-	        <p className="mt-3">
+        <p className="mt-3">
           <a href="/owner/inbox" className="text-[#E8A24A] hover:underline">
             Messages from unlisted members →
           </a>
