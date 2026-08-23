@@ -1,4 +1,5 @@
 import { requireOwner } from "@/lib/is-owner";
+import { replyToMember } from "./actions";
 
 export default async function OwnerInbox() {
   const { supabase } = await requireOwner();
@@ -23,12 +24,6 @@ export default async function OwnerInbox() {
   const emailOf = (id: string) =>
     people?.find((p) => p.id === id)?.email || id;
 
-  const latestByMember = new Map<string, (typeof notes)[0]>();
-  for (const note of notes || []) {
-    const mid = note.member_id || note.sender_id;
-    if (mid && !latestByMember.has(mid)) latestByMember.set(mid, note);
-  }
-
   return (
     <main className="min-h-screen bg-[#0B1020] text-[#F3E6D2] px-6 py-10">
       <div className="mx-auto max-w-3xl">
@@ -41,21 +36,59 @@ export default async function OwnerInbox() {
         >
           Messages from unlisted members
         </h1>
-        <div className="mt-8 space-y-3">
-          {[...latestByMember.entries()].map(([memberId, note]) => (
-            <a
-              key={memberId}
-              href={`/owner/inbox/${memberId}`}
-              className="block rounded-xl border border-white/10 bg-[#12182A] p-4 hover:border-[#E8A24A]"
-            >
-              <p className="text-[#E8A24A]">{emailOf(memberId)}</p>
-              <p className="mt-1 text-xs text-[#9AA3B5]">
-                {new Date(note.created_at).toLocaleString()}
-              </p>
-              <p className="mt-2 line-clamp-2 text-sm">{note.body}</p>
-            </a>
-          ))}
-          {!latestByMember.size && (
+
+        <div className="mt-8 space-y-8">
+          {memberIds.map((memberId) => {
+            const thread = (notes || [])
+              .filter((n) => (n.member_id || n.sender_id) === memberId)
+              .slice()
+              .reverse();
+
+            return (
+              <section
+                key={memberId}
+                className="rounded-xl border border-white/10 bg-[#12182A] p-4"
+              >
+                <p className="text-[#E8A24A]">{emailOf(memberId)}</p>
+                <a
+                  href={`/owner/people/${memberId}`}
+                  className="text-xs text-[#9AA3B5] hover:text-white"
+                >
+                  Open this member
+                </a>
+
+                <div className="mt-4 space-y-3">
+                  {thread.map((note) => (
+                    <div key={note.id} className="rounded-lg bg-[#0B1020] p-3">
+                      <p className="text-xs text-[#9AA3B5]">
+                        {note.sender_id === memberId ? "Member" : "You"} ·{" "}
+                        {new Date(note.created_at).toLocaleString()}
+                      </p>
+                      <p className="mt-2 whitespace-pre-wrap">{note.body}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <form action={replyToMember} className="mt-4 space-y-3">
+                  <input type="hidden" name="memberId" value={memberId} />
+                  <textarea
+                    name="body"
+                    required
+                    rows={3}
+                    placeholder="Reply to this member"
+                    className="w-full rounded-xl bg-[#0B1020] px-4 py-3"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-full bg-[#E8A24A] px-5 py-2 font-medium text-[#0B1020]"
+                  >
+                    Send reply
+                  </button>
+                </form>
+              </section>
+            );
+          })}
+          {!memberIds.length && (
             <p className="text-sm text-[#9AA3B5]">No messages yet.</p>
           )}
         </div>
