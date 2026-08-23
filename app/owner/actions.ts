@@ -28,3 +28,14 @@ export async function setPaused(formData: FormData) {
   await supabase.from("profiles").update({ is_paused: paused }).eq("id", id);
   redirect("/owner/people");
 }
+
+export async function deletePerson(formData: FormData) {
+  const { supabase, user } = await requireOwner();
+  const id = String(formData.get("id") || "");
+  if (!id || id === user.id) {
+    redirect("/owner/people");
+  }
+
+  await supabase.from("profiles").delete().eq("id", id);
+  redirect("/owner/people");
+}

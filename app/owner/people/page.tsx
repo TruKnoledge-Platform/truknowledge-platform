@@ -1,8 +1,9 @@
 import { requireOwner } from "@/lib/is-owner";
 import { setPaused } from "../actions";
+import DeleteButton from "./delete-button";
 
 export default async function OwnerPeople() {
-  const { supabase } = await requireOwner();
+  const { supabase, user } = await requireOwner();
   const { data: people } = await supabase
     .from("profiles")
     .select("id, email, role, is_paused")
@@ -21,38 +22,50 @@ export default async function OwnerPeople() {
           People
         </h1>
         <p className="mt-2 text-sm text-[#9AA3B5]">
-          Pause an account when you need to. Delete comes later — pause is safer.
+          Pause if you may want them back. Delete removes the profile. You
+          cannot delete your own owner account.
         </p>
 
         <div className="mt-8 space-y-3">
-          {(people || []).map((person) => (
-            <div
-              key={person.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#12182A] px-4 py-3"
-            >
-              <div>
-                <p>{person.email || person.id}</p>
-                <p className="text-xs text-[#9AA3B5]">
-                  {person.role || "member"}
-                  {person.is_paused ? " · paused" : ""}
-                </p>
+          {(people || []).map((person) => {
+            const label = person.email || person.id;
+            const isYou = person.id === user.id;
+
+            return (
+              <div
+                key={person.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#12182A] px-4 py-3"
+              >
+                <div>
+                  <p>
+                    {label}
+                    {isYou ? " (you)" : ""}
+                  </p>
+                  <p className="text-xs text-[#9AA3B5]">
+                    {person.role || "member"}
+                    {person.is_paused ? " · paused" : ""}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <form action={setPaused}>
+                    <input type="hidden" name="id" value={person.id} />
+                    <input
+                      type="hidden"
+                      name="paused"
+                      value={person.is_paused ? "false" : "true"}
+                    />
+                    <button
+                      type="submit"
+                      className="rounded-full border border-[#E8A24A]/50 px-4 py-1.5 text-sm text-[#E8A24A]"
+                    >
+                      {person.is_paused ? "Unpause" : "Pause"}
+                    </button>
+                  </form>
+                  {!isYou && <DeleteButton id={person.id} label={label} />}
+                </div>
               </div>
-              <form action={setPaused}>
-                <input type="hidden" name="id" value={person.id} />
-                <input
-                  type="hidden"
-                  name="paused"
-                  value={person.is_paused ? "false" : "true"}
-                />
-                <button
-                  type="submit"
-                  className="rounded-full border border-[#E8A24A]/50 px-4 py-1.5 text-sm text-[#E8A24A]"
-                >
-                  {person.is_paused ? "Unpause" : "Pause"}
-                </button>
-              </form>
-            </div>
-          ))}
+            );
+          })}
           {!people?.length && (
             <p className="text-sm text-[#9AA3B5]">No profiles yet.</p>
           )}
