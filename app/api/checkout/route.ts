@@ -42,10 +42,17 @@ export async function POST(req: NextRequest) {
       .eq("user_id", course.teacher_id)
       .maybeSingle();
 
+    const { data: settings } = await supabase
+      .from("platform_settings")
+      .select("fee_percent")
+      .eq("id", 1)
+      .maybeSingle();
+    const feePercent = Number(settings?.fee_percent ?? 15) / 100;
+
     const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-    const origin = req.headers.get("origin") || "http://localhost:3000";
+    const origin = req.headers.get("origin") || "https://truknowledge.center";
     const amount = Math.round(price * 100);
-    const applicationFee = Math.round(amount * 0.1);
+    const applicationFee = Math.round(amount * feePercent);
     const safeNext =
       typeof next === "string" && next.startsWith("/") ? next : "/learn";
 
