@@ -67,7 +67,7 @@ export default async function Home() {
             className="mx-auto mt-5 max-w-3xl text-4xl leading-[1.12] font-medium md:text-6xl"
             style={{ fontFamily: "var(--font-display), Georgia, serif" }}
           >
-            Connecting real hearts, minds and souls.
+            Connecting true hearts, minds and souls.
           </h1>
           <p className="mx-auto mt-6 max-w-lg text-lg text-[#F3E6D2]/80">
             Course and Web App. One back office. Every platform.
