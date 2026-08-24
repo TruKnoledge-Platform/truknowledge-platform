@@ -1,6 +1,28 @@
 import { requireOwner } from "@/lib/is-owner";
 import { saveFee } from "./actions";
 
+export async function saveDomainPrices(formData: FormData) {
+  const { supabase } = await requireOwner();
+  const diy = Number(formData.get("price_cname_diy"));
+  const setup = Number(formData.get("price_cname_setup"));
+  const first = Number(formData.get("price_domain_first"));
+  const extra = Number(formData.get("price_domain_extra"));
+  if ([diy, setup, first, extra].some((n) => Number.isNaN(n) || n < 0)) {
+    redirect("/owner");
+  }
+  await supabase
+    .from("platform_settings")
+    .update({
+      price_cname_diy: diy,
+      price_cname_setup: setup,
+      price_domain_first: first,
+      price_domain_extra: extra,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
+  redirect("/owner");
+}
+
 export default async function OwnerHome() {
   const { supabase } = await requireOwner();
 
