@@ -10,13 +10,13 @@ export async function saveFee(formData: FormData) {
   if (Number.isNaN(fee) || fee < 0 || fee > 90) {
     redirect("/owner");
   }
-  await supabase.from("platform_settings").upsert({
-    id: 1,
-    fee_percent: fee,
-    updated_at: new Date().toISOString(),
-  });
+  await supabase
+    .from("platform_settings")
+    .update({ fee_percent: fee, updated_at: new Date().toISOString() })
+    .eq("id", 1);
   redirect("/owner");
 }
+
 export async function saveDomainPrices(formData: FormData) {
   const { supabase } = await requireOwner();
   const diy = Number(formData.get("price_cname_diy"));
