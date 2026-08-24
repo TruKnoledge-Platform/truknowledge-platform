@@ -44,7 +44,7 @@ export async function saveWebAppSlug(formData: FormData) {
   if (taken) redirect(`/teacher/${courseId}/domain?err=taken`);
 
   await supabase.from("courses").update({ webapp_slug: slug }).eq("id", courseId);
-  redirect(`/teacher/${courseId}/domain?ok=1`);
+  redirect(`/teacher/${courseId}`);
 }
 
 const KIND_LABEL: Record<string, string> = {

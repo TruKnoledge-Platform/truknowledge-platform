@@ -58,8 +58,6 @@ export default async function TeacherDomainPage({
     <main className="min-h-screen bg-[#0B1020] text-[#F3E6D2] px-6 py-10">
       <div className="mx-auto max-w-3xl">
         <a href="/teacher" className="text-sm text-[#9AA3B5] hover:text-white">
-          Back to teacher home
-        </a>
         <h1
           className="mt-4 text-3xl"
           style={{ fontFamily: "var(--font-display), Georgia, serif" }}

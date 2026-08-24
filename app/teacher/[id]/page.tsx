@@ -147,15 +147,12 @@ export default function EditCoursePage() {
   }
 
   useEffect(() => {
-    if (id && typeof window !== "undefined") {
-      setWebAppUrl(`${window.location.origin}/webapp/${id}`);
-    }
 
     async function loadCourse() {
       const { data, error } = await supabase
         .from("courses")
         .select(
-          "title, description, template, is_published, thumbnail_url, price, preview_video_url, discussions_enabled"
+          "title, description, template, is_published, thumbnail_url, price, preview_video_url, discussions_enabled, webapp_slug"
         )
         .eq("id", id)
         .single();
@@ -173,7 +170,12 @@ export default function EditCoursePage() {
       setPrice(String(data.price ?? 0));
       setTemplate(data.template || "classic_linear");
       setIsPublished(Boolean(data.is_published));
-      setDiscussionsEnabled(Boolean(data.discussions_enabled));
+	setDiscussionsEnabled(Boolean(data.discussions_enabled));
+      if (data.webapp_slug) {
+        setWebAppUrl(`https://${data.webapp_slug}.truknowledge.center`);
+      } else {
+        setWebAppUrl(`https://truknowledge.center/webapp/${id}`);
+      }
       const sessionRows = await loadSessions();
       await loadEnrollments(sessionRows);
       setLoading(false);
@@ -486,6 +488,12 @@ export default function EditCoursePage() {
           <p className="mt-3 break-all rounded-lg bg-[#0B1220] px-3 py-2 text-sm text-orange-300">
             {webAppUrl}
           </p>
+	<a
+            href={`/teacher/${id}/domain`}
+            className="mt-3 mr-3 inline-block rounded-lg border border-orange-500 px-4 py-2 text-sm text-orange-400"
+          >
+            Change address
+          </a>
           <button
             type="button"
             onClick={copyWebAppLink}
