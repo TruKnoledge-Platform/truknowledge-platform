@@ -148,6 +148,12 @@ export default async function TeacherPage() {
                       >
                         Web App
                       </a>
+			 <a
+                        href={`/teacher/${course.id}/domain`}
+                        className="rounded-lg border border-orange-500 px-4 py-2 text-sm text-orange-400"
+                      >
+                        Domain
+                      </a>
                       <DeleteCourseButton courseId={course.id} />
                     </div>
                   </div>
