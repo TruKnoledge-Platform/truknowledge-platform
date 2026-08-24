@@ -26,7 +26,7 @@ export default async function TeacherDomainPage({
 
   const { data: course } = await supabase
     .from("courses")
-    .select("id, title, webapp_slug")
+    .select("id, title, webapp_slug, custom_host")
     .eq("id", id)
     .eq("teacher_id", user.id)
     .maybeSingle();
@@ -67,18 +67,47 @@ export default async function TeacherDomainPage({
           Web App address
         </h1>
         <p className="mt-2 text-sm text-[#9AA3B5]">{course.title}</p>
-
         {latest && (
           <div className="mt-6 rounded-2xl border border-[#E8A24A]/40 bg-[#E8A24A]/10 p-5">
-            <p className="text-sm font-medium text-[#E8A24A]">Payment received</p>
-            <p className="mt-2 text-sm leading-6">
-              We are working on this and will respond within 48 hours.
-              Thank you for your patronage and patience.
+            <p className="text-sm font-medium text-[#E8A24A]">
+              {course.custom_host ? "Your custom address is live" : "Payment received"}
             </p>
-            <p className="mt-3 text-xs text-[#9AA3B5]">
-              {KIND_WORDS[latest.kind] || latest.kind}
-              {latest.host ? ` · ${latest.host}` : ""}
-            </p>
+            {course.custom_host ? (
+              <p className="mt-2 text-sm leading-6">
+                Learners open{" "}
+                <a className="text-[#E8A24A] underline" href={`https://${course.custom_host}`}>
+                  {course.custom_host}
+                </a>
+                . Your main website is unchanged.
+              </p>
+            ) : latest.kind === "cname_diy" && latest.host ? (
+              <div className="mt-2 text-sm leading-6">
+                <p>
+                  Add this at the company where you bought the domain (GoDaddy,
+                  Namecheap, etc.). Your homepage stays as it is.
+                </p>
+                <p className="mt-3">
+                  Type: <span className="text-[#E8A24A]">CNAME</span>
+                  <br />
+                  Name / Host:{" "}
+                  <span className="text-[#E8A24A]">
+                    {latest.host.replace(/^https?:\/\//, "").split(".")[0]}
+                  </span>
+                  <br />
+                  Value / Points to:{" "}
+                  <span className="text-[#E8A24A]">cname.vercel-dns.com</span>
+                </p>
+                <p className="mt-3 text-[#9AA3B5]">
+                  We will reply within 48 hours when it is live. Thank you for
+                  your patronage and patience.
+                </p>
+              </div>
+            ) : (
+              <p className="mt-2 text-sm leading-6">
+                We are working on this and will respond within 48 hours.
+                Thank you for your patronage and patience.
+              </p>
+            )}
           </div>
         )}
 

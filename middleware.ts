@@ -24,6 +24,20 @@ function webAppSlug(host: string) {
   return slug;
 }
 
+async function rewriteToCourse(
+  request: NextRequest,
+  supabaseResponse: NextResponse,
+  courseId: string
+) {
+  const url = request.nextUrl.clone();
+  url.pathname = `/webapp/${courseId}`;
+  const rewrite = NextResponse.rewrite(url);
+  supabaseResponse.cookies.getAll().forEach((c) => {
+    rewrite.cookies.set(c.name, c.value);
+  });
+  return rewrite;
+}
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -69,15 +83,25 @@ export async function middleware(request: NextRequest) {
       .select("id")
       .eq("webapp_slug", slug)
       .maybeSingle();
-
     if (course?.id) {
-      const url = request.nextUrl.clone();
-      url.pathname = `/webapp/${course.id}`;
-      const rewrite = NextResponse.rewrite(url);
-      supabaseResponse.cookies.getAll().forEach((c) => {
-        rewrite.cookies.set(c.name, c.value);
-      });
-      return rewrite;
+      return rewriteToCourse(request, supabaseResponse, course.id);
+    }
+  }
+
+  const isOwnHost =
+    host === ROOT ||
+    host === `www.${ROOT}` ||
+    host.endsWith(`.${ROOT}`) ||
+    host.endsWith(".vercel.app");
+
+  if (!isOwnHost && (path === "/" || path === "")) {
+    const { data: course } = await supabase
+      .from("courses")
+      .select("id")
+      .eq("custom_host", host)
+      .maybeSingle();
+    if (course?.id) {
+      return rewriteToCourse(request, supabaseResponse, course.id);
     }
   }
 
