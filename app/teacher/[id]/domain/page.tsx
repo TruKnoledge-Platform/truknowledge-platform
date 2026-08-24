@@ -2,6 +2,13 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
 import { saveWebAppSlug, startDomainCheckout } from "./actions";
 
+const KIND_WORDS: Record<string, string> = {
+  cname_diy: "Choice 2 — you add the CNAME",
+  cname_setup: "Choice 2 — we add the CNAME",
+  domain_first: "Choice 3 — first course, we buy the domain",
+  domain_extra: "Choice 3 — extra course on that domain",
+};
+
 export default async function TeacherDomainPage({
   params,
   searchParams,
@@ -45,6 +52,7 @@ export default async function TeacherDomainPage({
   const first = Number(settings?.price_domain_first ?? 0);
   const extra = Number(settings?.price_domain_extra ?? 0);
   const money = (n: number) => (n > 0 ? `$${n.toFixed(2)}` : "Price not set yet");
+  const latest = orders?.[0];
 
   return (
     <main className="min-h-screen bg-[#0B1020] text-[#F3E6D2] px-6 py-10">
@@ -60,6 +68,20 @@ export default async function TeacherDomainPage({
         </h1>
         <p className="mt-2 text-sm text-[#9AA3B5]">{course.title}</p>
 
+        {latest && (
+          <div className="mt-6 rounded-2xl border border-[#E8A24A]/40 bg-[#E8A24A]/10 p-5">
+            <p className="text-sm font-medium text-[#E8A24A]">Payment received</p>
+            <p className="mt-2 text-sm leading-6">
+              We are working on this and will respond within 48 hours.
+              Thank you for your patronage and patience.
+            </p>
+            <p className="mt-3 text-xs text-[#9AA3B5]">
+              {KIND_WORDS[latest.kind] || latest.kind}
+              {latest.host ? ` · ${latest.host}` : ""}
+            </p>
+          </div>
+        )}
+
         {err === "taken" && (
           <p className="mt-4 text-sm text-red-300">That name is taken.</p>
         )}
@@ -67,7 +89,9 @@ export default async function TeacherDomainPage({
           <p className="mt-4 text-sm text-red-300">Enter a short name.</p>
         )}
         {err === "host" && (
-          <p className="mt-4 text-sm text-red-300">Enter the address, like app.yoursite.com</p>
+          <p className="mt-4 text-sm text-red-300">
+            Enter the address, like app.yoursite.com
+          </p>
         )}
         {err === "names" && (
           <p className="mt-4 text-sm text-red-300">Enter three names, in order.</p>
@@ -214,11 +238,17 @@ export default async function TeacherDomainPage({
         {!!orders?.length && (
           <section className="mt-6 rounded-2xl border border-white/10 p-6">
             <h2 className="text-lg text-[#E8A24A]">Your requests</h2>
-            <ul className="mt-3 space-y-2 text-sm text-[#9AA3B5]">
+            <ul className="mt-3 space-y-3 text-sm">
               {orders.map((o) => (
-                <li key={o.id}>
-                  {o.kind} · ${Number(o.amount).toFixed(2)} ·{" "}
-                  {o.host || [o.name1, o.name2, o.name3].filter(Boolean).join(", ")}
+                <li key={o.id} className="text-[#9AA3B5]">
+                  <span className="text-[#F3E6D2]">
+                    {KIND_WORDS[o.kind] || o.kind}
+                  </span>
+                  {" · "}${Number(o.amount).toFixed(2)}
+                  {o.host ? ` · ${o.host}` : ""}
+                  {o.name1
+                    ? ` · ${[o.name1, o.name2, o.name3].filter(Boolean).join(", ")}`
+                    : ""}
                 </li>
               ))}
             </ul>
