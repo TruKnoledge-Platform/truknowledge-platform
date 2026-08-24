@@ -100,7 +100,10 @@ export async function startDomainCheckout(formData: FormData) {
     .eq("id", 1)
     .maybeSingle();
 
-  const dollars = Number(settings?.[PRICE_COL[kind] as keyof typeof settings] ?? 0);
+  const col = PRICE_COL[kind];
+  const dollars = Number(
+    settings ? (settings as Record<string, unknown>)[col] : 0
+  );
   if (!dollars || dollars <= 0) {
     redirect(`/teacher/${courseId}/domain?err=price`);
   }
@@ -110,7 +113,8 @@ export async function startDomainCheckout(formData: FormData) {
   }
 
   const h = await headers();
-  const incoming = h.get("x-forwarded-host") || h.get("host") || "truknowledge.center";
+  const incoming =
+    h.get("x-forwarded-host") || h.get("host") || "truknowledge.center";
   const origin = incoming.includes("localhost")
     ? "https://truknowledge.center"
     : `https://${incoming.split(",")[0]}`;
@@ -148,4 +152,8 @@ export async function startDomainCheckout(formData: FormData) {
     cancel_url: `${origin}${next}`,
   });
 
-  if (!session.url) redirect(`/teacher/${courseId
+  if (!session.url) {
+    redirect(`/teacher/${courseId}/domain?err=stripe`);
+  }
+  redirect(session.url);
+}
