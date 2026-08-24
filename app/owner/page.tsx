@@ -180,6 +180,11 @@ export default async function OwnerHome() {
             Messages from unlisted members →
           </a>
         </p>
+	        <p className="mt-3">
+          <a href="/owner/domains" className="text-[#E8A24A] hover:underline">
+            Domain orders (Choice 2 and 3) →
+          </a>
+        </p>
       </div>
     </main>
   );

@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
-import { saveWebAppSlug } from "./actions";
+import { saveWebAppSlug, startDomainCheckout } from "./actions";
 
 export default async function TeacherDomainPage({
   params,
@@ -33,12 +33,18 @@ export default async function TeacherDomainPage({
     .eq("id", 1)
     .maybeSingle();
 
+  const { data: orders } = await supabase
+    .from("domain_orders")
+    .select("id, kind, host, name1, name2, name3, amount, created_at")
+    .eq("course_id", id)
+    .eq("teacher_id", user.id)
+    .order("created_at", { ascending: false });
+
   const diy = Number(settings?.price_cname_diy ?? 0);
   const setup = Number(settings?.price_cname_setup ?? 0);
   const first = Number(settings?.price_domain_first ?? 0);
   const extra = Number(settings?.price_domain_extra ?? 0);
-  const money = (n: number) =>
-    n > 0 ? `$${n.toFixed(2)}` : "Price not set yet";
+  const money = (n: number) => (n > 0 ? `$${n.toFixed(2)}` : "Price not set yet");
 
   return (
     <main className="min-h-screen bg-[#0B1020] text-[#F3E6D2] px-6 py-10">
@@ -54,10 +60,27 @@ export default async function TeacherDomainPage({
         </h1>
         <p className="mt-2 text-sm text-[#9AA3B5]">{course.title}</p>
 
-        <section className="mt-8 rounded-2xl border border-white/10 bg-[#12182A] p-6">
-          <p className="text-xs uppercase tracking-wide text-[#E8A24A]">
-            Choice 1 — free
+        {err === "taken" && (
+          <p className="mt-4 text-sm text-red-300">That name is taken.</p>
+        )}
+        {err === "name" && (
+          <p className="mt-4 text-sm text-red-300">Enter a short name.</p>
+        )}
+        {err === "host" && (
+          <p className="mt-4 text-sm text-red-300">Enter the address, like app.yoursite.com</p>
+        )}
+        {err === "names" && (
+          <p className="mt-4 text-sm text-red-300">Enter three names, in order.</p>
+        )}
+        {err === "price" && (
+          <p className="mt-4 text-sm text-red-300">
+            This option has no price yet. Try again later.
           </p>
+        )}
+        {ok && <p className="mt-4 text-sm text-[#E8A24A]">Saved.</p>}
+
+        <section className="mt-8 rounded-2xl border border-white/10 bg-[#12182A] p-6">
+          <p className="text-xs uppercase tracking-wide text-[#E8A24A]">Choice 1 — free</p>
           <h2 className="mt-2 text-xl text-[#E8A24A]">A name on TruKnowledge</h2>
           <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6">
             <li>You type a short name (letters, numbers, hyphen).</li>
@@ -66,7 +89,6 @@ export default async function TeacherDomainPage({
               <span className="text-[#E8A24A]">name.truknowledge.center</span>
             </li>
             <li>No payment. The long /webapp/ link still works.</li>
-            <li>If the name is taken, try another.</li>
           </ul>
           <form action={saveWebAppSlug} className="mt-6 flex flex-wrap items-end gap-3">
             <input type="hidden" name="courseId" value={id} />
@@ -88,82 +110,120 @@ export default async function TeacherDomainPage({
               Save name
             </button>
           </form>
-          {err === "taken" && (
-            <p className="mt-3 text-sm text-red-300">That name is taken.</p>
-          )}
-          {err === "name" && (
-            <p className="mt-3 text-sm text-red-300">Enter a short name.</p>
-          )}
-          {ok && (
-            <p className="mt-3 text-sm text-[#E8A24A]">Saved.</p>
-          )}
           {course.webapp_slug && (
             <p className="mt-4 text-sm">
               Free address:{" "}
-              <a
-                className="text-[#E8A24A] underline"
-                href={`https://${course.webapp_slug}.truknowledge.center`}
-              >
+              <span className="text-[#E8A24A]">
                 {course.webapp_slug}.truknowledge.center
-              </a>
+              </span>
             </p>
           )}
-          <p className="mt-2 text-xs text-[#9AA3B5]">
-            Backup link: truknowledge.center/webapp/{id}
-          </p>
         </section>
 
         <section className="mt-6 rounded-2xl border border-white/10 bg-[#12182A] p-6">
-          <p className="text-xs uppercase tracking-wide text-[#E8A24A]">
-            Choice 2 — paid
-          </p>
+          <p className="text-xs uppercase tracking-wide text-[#E8A24A]">Choice 2 — paid</p>
           <h2 className="mt-2 text-xl text-[#E8A24A]">
             Keep your own site, add app.yoursite.com
           </h2>
           <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6">
             <li>Your homepage stays as it is.</li>
-            <li>
-              Learners type app.yoursite.com and stay on that address (CNAME).
-            </li>
-            <li>
-              DIY: you add one line at your domain company — {money(diy)}
-            </li>
-            <li>We do it for you — {money(setup)}</li>
+            <li>Learners type app.yoursite.com and stay on that address.</li>
             <li>After payment we reply within 48 hours.</li>
           </ul>
-          <p className="mt-4 text-sm text-[#9AA3B5]">
-            Stripe checkout for this choice is next. Prices above are what
-            you will pay.
-          </p>
+          <form action={startDomainCheckout} className="mt-6 space-y-4">
+            <input type="hidden" name="courseId" value={id} />
+            <label className="block text-sm">
+              Address you want (example: app.yoursite.com)
+              <input
+                name="host"
+                required
+                placeholder="app.yoursite.com"
+                className="mt-1 block w-full rounded-lg bg-[#0B1020] px-3 py-2"
+              />
+            </label>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="submit"
+                name="kind"
+                value="cname_diy"
+                disabled={diy <= 0}
+                className="rounded-full bg-[#E8A24A] px-5 py-2 font-medium text-[#0B1020] disabled:opacity-40"
+              >
+                I add the CNAME — {money(diy)}
+              </button>
+              <button
+                type="submit"
+                name="kind"
+                value="cname_setup"
+                disabled={setup <= 0}
+                className="rounded-full border border-[#E8A24A] px-5 py-2 text-[#E8A24A] disabled:opacity-40"
+              >
+                You add it — {money(setup)}
+              </button>
+            </div>
+          </form>
         </section>
 
         <section className="mt-6 rounded-2xl border border-white/10 bg-[#12182A] p-6">
-          <p className="text-xs uppercase tracking-wide text-[#E8A24A]">
-            Choice 3 — paid
-          </p>
-          <h2 className="mt-2 text-xl text-[#E8A24A]">
-            We buy a domain for you
-          </h2>
+          <p className="text-xs uppercase tracking-wide text-[#E8A24A]">Choice 3 — paid</p>
+          <h2 className="mt-2 text-xl text-[#E8A24A]">We buy a domain for you</h2>
           <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6">
-            <li>You list three names you want, in order.</li>
-            <li>We check if we can buy one, then attach it to your Web Apps.</li>
-            <li>
-              First course on that domain — {money(first)}
-            </li>
-            <li>
-              Each extra course on the same domain — {money(extra)}
-            </li>
-            <li>
-              Courses look like yourdomain.com/foundations ,
-              yourdomain.com/advanced
-            </li>
-            <li>If none of the three work, we suggest others. You tick or send three more.</li>
+            <li>List three names you want, in order.</li>
+            <li>We try to buy one, then attach your Web Apps to it.</li>
+            <li>Courses look like yourdomain.com/foundations</li>
+            <li>If none work, we suggest others. You tick or send three more.</li>
             <li>After payment we reply within 48 hours.</li>
           </ul>
-          <p className="mt-4 text-sm text-[#9AA3B5]">
-            Stripe and the three-name form are next.
-          </p>
+          <form action={startDomainCheckout} className="mt-6 space-y-3">
+            <input type="hidden" name="courseId" value={id} />
+            <label className="block text-sm">
+              First choice
+              <input name="name1" required className="mt-1 block w-full rounded-lg bg-[#0B1020] px-3 py-2" />
+            </label>
+            <label className="block text-sm">
+              Second choice
+              <input name="name2" required className="mt-1 block w-full rounded-lg bg-[#0B1020] px-3 py-2" />
+            </label>
+            <label className="block text-sm">
+              Third choice
+              <input name="name3" required className="mt-1 block w-full rounded-lg bg-[#0B1020] px-3 py-2" />
+            </label>
+            <div className="flex flex-wrap gap-3 pt-2">
+              <button
+                type="submit"
+                name="kind"
+                value="domain_first"
+                disabled={first <= 0}
+                className="rounded-full bg-[#E8A24A] px-5 py-2 font-medium text-[#0B1020] disabled:opacity-40"
+              >
+                First course — {money(first)}
+              </button>
+              <button
+                type="submit"
+                name="kind"
+                value="domain_extra"
+                disabled={extra <= 0}
+                className="rounded-full border border-[#E8A24A] px-5 py-2 text-[#E8A24A] disabled:opacity-40"
+              >
+                Extra course — {money(extra)}
+              </button>
+            </div>
+          </form>
         </section>
+
+        {!!orders?.length && (
+          <section className="mt-6 rounded-2xl border border-white/10 p-6">
+            <h2 className="text-lg text-[#E8A24A]">Your requests</h2>
+            <ul className="mt-3 space-y-2 text-sm text-[#9AA3B5]">
+              {orders.map((o) => (
+                <li key={o.id}>
+                  {o.kind} · ${Number(o.amount).toFixed(2)} ·{" "}
+                  {o.host || [o.name1, o.name2, o.name3].filter(Boolean).join(", ")}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
     </main>
   );

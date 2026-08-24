@@ -10,7 +10,6 @@ export default async function CheckoutSuccessPage({
 }) {
   const { session_id, next } = await searchParams;
   const returnTo = next && next.startsWith("/") ? next : "/learn";
-  let courseId = "";
 
   if (!session_id || !process.env.STRIPE_SECRET_KEY) {
     return (
@@ -18,7 +17,7 @@ export default async function CheckoutSuccessPage({
         <div className="mx-auto max-w-xl">
           <h1 className="text-3xl font-semibold">Payment received</h1>
           <p className="mt-3 text-slate-400">
-            We could not confirm the session, but you can check My courses.
+            We could not confirm the session. Check My courses or your Domain page.
           </p>
           <Link href={returnTo} className="mt-6 inline-block text-orange-400">
             Continue
@@ -30,13 +29,30 @@ export default async function CheckoutSuccessPage({
 
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
   const session = await stripe.checkout.sessions.retrieve(session_id);
-  courseId = session.metadata?.courseId || "";
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user && courseId && session.payment_status === "paid") {
+  const isDomain = session.metadata?.kind === "domain";
+  const courseId = session.metadata?.courseId || "";
+
+  if (user && session.payment_status === "paid" && isDomain) {
+    await supabase.from("domain_orders").insert({
+      teacher_id: user.id,
+      course_id: courseId || null,
+      kind: session.metadata?.domainKind || "",
+      host: session.metadata?.host || null,
+      name1: session.metadata?.name1 || null,
+      name2: session.metadata?.name2 || null,
+      name3: session.metadata?.name3 || null,
+      amount: (session.amount_total || 0) / 100,
+      stripe_session_id: session_id,
+      status: "paid",
+    });
+  }
+
+  if (user && courseId && session.payment_status === "paid" && !isDomain) {
     await supabase.from("enrollments").insert({
       user_id: user.id,
       course_id: courseId,
@@ -60,15 +76,39 @@ export default async function CheckoutSuccessPage({
     }
   }
 
+  if (isDomain) {
+    return (
+      <main className="min-h-screen bg-[#0B1020] text-[#F3E6D2] px-6 py-10">
+        <div className="mx-auto max-w-xl rounded-2xl border border-white/10 bg-[#12182A] p-8">
+          <p className="text-sm text-[#E8A24A]">Payment complete</p>
+          <h1
+            className="mt-2 text-3xl"
+            style={{ fontFamily: "var(--font-display), Georgia, serif" }}
+          >
+            We have your request
+          </h1>
+          <p className="mt-4 text-sm leading-6 text-[#9AA3B5]">
+            TruKnowledge will reply within 48 hours about this domain.
+            You can close this page.
+          </p>
+          <Link
+            href={returnTo}
+            className="mt-6 inline-block rounded-full bg-[#E8A24A] px-6 py-3 font-medium text-[#0B1020]"
+          >
+            Back to Web App address
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
       {courseId && <SavePlace courseId={courseId} />}
       <div className="mx-auto max-w-xl rounded-2xl border border-slate-800 bg-[#111827] p-8">
         <p className="text-sm text-orange-400">Payment complete</p>
         <h1 className="mt-2 text-3xl font-semibold">You’re enrolled</h1>
-        <p className="mt-3 text-slate-400">
-          This was a Stripe test payment. You can open the course now.
-        </p>
+        <p className="mt-3 text-slate-400">You can open the course now.</p>
         <Link
           href={returnTo}
           className="mt-6 inline-block rounded-lg bg-orange-500 px-6 py-3 font-medium hover:bg-orange-600"
