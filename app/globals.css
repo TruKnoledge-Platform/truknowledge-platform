@@ -11,4 +11,35 @@
     background: #0b1020;
     color: #f3e6d2;
   }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  a {
+    cursor: pointer;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    transition: filter 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+  }
+
+  button:not(:disabled):hover,
+  [role="button"]:not(:disabled):hover {
+    filter: brightness(1.12);
+    transform: translateY(-1px);
+  }
+
+  button:not(:disabled):active,
+  [role="button"]:not(:disabled):active {
+    transform: translateY(0);
+    filter: brightness(0.96);
+  }
+
+  a {
+    transition: color 0.15s ease, opacity 0.15s ease;
+  }
+
+  a:hover {
+    opacity: 0.88;
+  }
 }
