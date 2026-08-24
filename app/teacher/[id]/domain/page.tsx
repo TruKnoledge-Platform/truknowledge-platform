@@ -57,7 +57,9 @@ export default async function TeacherDomainPage({
   return (
     <main className="min-h-screen bg-[#0B1020] text-[#F3E6D2] px-6 py-10">
       <div className="mx-auto max-w-3xl">
-        <a href="/teacher" className="text-sm text-[#9AA3B5] hover:text-white">
+        <a href={`/teacher/${id}`} className="text-sm text-[#9AA3B5] hover:text-white">
+          Back to course
+        </a>
         <h1
           className="mt-4 text-3xl"
           style={{ fontFamily: "var(--font-display), Georgia, serif" }}
@@ -200,15 +202,27 @@ export default async function TeacherDomainPage({
             <input type="hidden" name="courseId" value={id} />
             <label className="block text-sm">
               First choice
-              <input name="name1" required className="mt-1 block w-full rounded-lg bg-[#0B1020] px-3 py-2" />
+              <input
+                name="name1"
+                required
+                className="mt-1 block w-full rounded-lg bg-[#0B1020] px-3 py-2"
+              />
             </label>
             <label className="block text-sm">
               Second choice
-              <input name="name2" required className="mt-1 block w-full rounded-lg bg-[#0B1020] px-3 py-2" />
+              <input
+                name="name2"
+                required
+                className="mt-1 block w-full rounded-lg bg-[#0B1020] px-3 py-2"
+              />
             </label>
             <label className="block text-sm">
               Third choice
-              <input name="name3" required className="mt-1 block w-full rounded-lg bg-[#0B1020] px-3 py-2" />
+              <input
+                name="name3"
+                required
+                className="mt-1 block w-full rounded-lg bg-[#0B1020] px-3 py-2"
+              />
             </label>
             <div className="flex flex-wrap gap-3 pt-2">
               <button
