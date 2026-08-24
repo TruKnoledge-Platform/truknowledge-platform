@@ -9,11 +9,17 @@ function cookieDomain(host: string) {
   return undefined;
 }
 
+function requestHost(request: NextRequest) {
+  const forwarded = request.headers.get("x-forwarded-host");
+  if (forwarded) return forwarded.split(",")[0].trim().split(":")[0].toLowerCase();
+  const host = request.headers.get("host") || request.nextUrl.hostname || "";
+  return host.split(":")[0].toLowerCase();
+}
+
 function webAppSlug(host: string) {
-  const h = host.split(":")[0].toLowerCase();
-  if (h === ROOT || h === `www.${ROOT}`) return null;
-  if (!h.endsWith(`.${ROOT}`)) return null;
-  const slug = h.slice(0, -(ROOT.length + 1));
+  if (host === ROOT || host === `www.${ROOT}`) return null;
+  if (!host.endsWith(`.${ROOT}`)) return null;
+  const slug = host.slice(0, -(ROOT.length + 1));
   if (!slug || slug === "www") return null;
   return slug;
 }
@@ -23,7 +29,7 @@ export async function middleware(request: NextRequest) {
     request,
   });
 
-  const host = request.headers.get("host") || "";
+  const host = requestHost(request);
   const domain = cookieDomain(host);
 
   const supabase = createServerClient(
@@ -35,7 +41,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({
@@ -52,9 +58,7 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  await supabase.auth.getUser();
 
   const path = request.nextUrl.pathname;
   const slug = webAppSlug(host);
@@ -62,11 +66,11 @@ export async function middleware(request: NextRequest) {
   if (slug && (path === "/" || path === "")) {
     const { data: course } = await supabase
       .from("courses")
-      .select("id, is_published, owner_paused")
+      .select("id")
       .eq("webapp_slug", slug)
       .maybeSingle();
 
-    if (course?.id && course.is_published && !course.owner_paused) {
+    if (course?.id) {
       const url = request.nextUrl.clone();
       url.pathname = `/webapp/${course.id}`;
       const rewrite = NextResponse.rewrite(url);
@@ -76,6 +80,10 @@ export async function middleware(request: NextRequest) {
       return rewrite;
     }
   }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const allowed =
     path.startsWith("/unlisted") ||
