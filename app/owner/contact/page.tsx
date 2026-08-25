@@ -1,6 +1,12 @@
 import { requireOwner } from "@/lib/is-owner";
+import { replyToContact } from "./actions";
 
-export default async function OwnerContact() {
+export default async function OwnerContact({
+  searchParams,
+}: {
+  searchParams: Promise<{ sent?: string; err?: string }>;
+}) {
+  const { sent, err } = await searchParams;
   const { supabase } = await requireOwner();
   const { data: notes } = await supabase
     .from("site_contacts")
@@ -23,6 +29,18 @@ export default async function OwnerContact() {
           Messages from the public Contact us page.
         </p>
 
+        {sent && (
+          <p className="mt-4 text-sm text-[#E8A24A]">Reply sent.</p>
+        )}
+        {err === "mail" && (
+          <p className="mt-4 text-sm text-red-300">
+            Mail did not send. Check RESEND_API_KEY on Vercel, then Redeploy.
+          </p>
+        )}
+        {err === "1" && (
+          <p className="mt-4 text-sm text-red-300">Write a reply first.</p>
+        )}
+
         <div className="mt-8 space-y-4">
           {(notes || []).map((n) => (
             <section
@@ -35,12 +53,22 @@ export default async function OwnerContact() {
               <p className="mt-3 text-xs text-[#9AA3B5]">
                 {new Date(n.created_at).toLocaleString()}
               </p>
-              <a
-                href={`mailto:${n.email}`}
-                className="mt-3 inline-block text-sm text-[#E8A24A] hover:underline"
-              >
-                Reply by email
-              </a>
+              <form action={replyToContact} className="mt-4 space-y-3">
+                <input type="hidden" name="email" value={n.email} />
+                <textarea
+                  name="body"
+                  required
+                  rows={4}
+                  placeholder="Write your reply"
+                  className="w-full rounded-lg bg-[#0B1020] px-3 py-2"
+                />
+                <button
+                  type="submit"
+                  className="rounded-full bg-[#E8A24A] px-5 py-2 font-medium text-[#0B1020]"
+                >
+                  Send reply
+                </button>
+              </form>
             </section>
           ))}
           {!(notes || []).length && (
