@@ -16,7 +16,7 @@ export async function replyToContact(formData: FormData) {
 
   const resend = new Resend(key);
   const result = await resend.emails.send({
-    from: process.env.RESEND_FROM || "TruKnowledge <beth.t@example.com>",
+    from: process.env.RESEND_FROM || "TruKnowledge <hello@truknowledge.center>",
     to: email,
     subject: "Reply from TruKnowledge",
     text: body,
