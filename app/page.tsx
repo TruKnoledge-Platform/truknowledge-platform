@@ -10,7 +10,7 @@ export default async function Home() {
     .from("courses")
     .select("id, title, thumbnail_url")
     .eq("is_published", true)
-	.eq("owner_paused", false)
+    .eq("owner_paused", false)
     .order("created_at", { ascending: false })
     .limit(3);
 
@@ -24,7 +24,11 @@ export default async function Home() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#0B1020]/30 via-[#0B1020]/55 to-[#0B1020]" />
 
         <header className="relative z-20 mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-          <a href="/" className="text-xl tracking-tight" style={{ fontFamily: "var(--font-display), Georgia, serif" }}>
+          <a
+            href="/"
+            className="text-xl tracking-tight"
+            style={{ fontFamily: "var(--font-display), Georgia, serif" }}
+          >
             Tru<span className="text-[#E8A24A]">Knowledge</span>
           </a>
           <nav className="flex items-center gap-5 text-sm text-[#9AA3B5]">
@@ -248,6 +252,11 @@ export default async function Home() {
           style={{ fontFamily: "var(--font-display), Georgia, serif" }}
         >
           TruKnowledge
+        </p>
+        <p className="mt-3">
+          <a href="/contact" className="text-[#E8A24A] hover:underline">
+            Contact us
+          </a>
         </p>
         <p className="mt-2">The way to a new positive future · Course and Web App</p>
       </footer>
