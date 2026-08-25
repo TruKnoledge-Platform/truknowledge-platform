@@ -94,14 +94,60 @@ export async function middleware(request: NextRequest) {
     host.endsWith(`.${ROOT}`) ||
     host.endsWith(".vercel.app");
 
-  if (!isOwnHost && (path === "/" || path === "")) {
-    const { data: course } = await supabase
-      .from("courses")
-      .select("id")
-      .eq("custom_host", host)
+  const reserved =
+    path.startsWith("/login") ||
+    path.startsWith("/signup") ||
+    path.startsWith("/auth") ||
+    path.startsWith("/learn") ||
+    path.startsWith("/api") ||
+    path.startsWith("/teacher") ||
+    path.startsWith("/owner") ||
+    path.startsWith("/checkout") ||
+    path.startsWith("/webapp") ||
+    path.startsWith("/unlisted") ||
+    path.startsWith("/payouts") ||
+    path.startsWith("/courses");
+
+  if (!isOwnHost && !reserved) {
+    const { data: teacher } = await supabase
+      .from("teacher_profiles")
+      .select("user_id")
+      .eq("bought_domain", host.replace(/^www\./, ""))
       .maybeSingle();
-    if (course?.id) {
-      return rewriteToCourse(request, supabaseResponse, course.id);
+
+    if (teacher?.user_id) {
+      if (path === "/" || path === "") {
+        const url = request.nextUrl.clone();
+        url.pathname = `/webapp/hub/${teacher.user_id}`;
+        const rewrite = NextResponse.rewrite(url);
+        supabaseResponse.cookies.getAll().forEach((c) => {
+          rewrite.cookies.set(c.name, c.value);
+        });
+        return rewrite;
+      }
+      const pathSlug = path.replace(/^\//, "").split("/")[0];
+      if (pathSlug) {
+        const { data: course } = await supabase
+          .from("courses")
+          .select("id")
+          .eq("teacher_id", teacher.user_id)
+          .eq("webapp_slug", pathSlug)
+          .maybeSingle();
+        if (course?.id) {
+          return rewriteToCourse(request, supabaseResponse, course.id);
+        }
+      }
+    }
+
+    if (path === "/" || path === "") {
+      const { data: course } = await supabase
+        .from("courses")
+        .select("id")
+        .eq("custom_host", host)
+        .maybeSingle();
+      if (course?.id) {
+        return rewriteToCourse(request, supabaseResponse, course.id);
+      }
     }
   }
 

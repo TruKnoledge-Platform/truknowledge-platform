@@ -157,3 +157,60 @@ export async function startDomainCheckout(formData: FormData) {
   }
   redirect(session.url);
 }
+
+export async function pickSuggestedName(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const courseId = String(formData.get("courseId") || "");
+  const orderId = String(formData.get("orderId") || "");
+  const pick = String(formData.get("pick") || "").trim();
+  if (!courseId || !orderId || !pick) {
+    redirect(`/teacher/${courseId}/domain`);
+  }
+
+  await supabase
+    .from("domain_orders")
+    .update({ chosen_domain: pick, status: "paid" })
+    .eq("id", orderId)
+    .eq("teacher_id", user.id);
+
+  redirect(`/teacher/${courseId}/domain?ok=1`);
+}
+
+export async function sendMoreNames(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const courseId = String(formData.get("courseId") || "");
+  const orderId = String(formData.get("orderId") || "");
+  const name1 = String(formData.get("name1") || "").trim();
+  const name2 = String(formData.get("name2") || "").trim();
+  const name3 = String(formData.get("name3") || "").trim();
+  if (!courseId || !orderId || !name1 || !name2 || !name3) {
+    redirect(`/teacher/${courseId}/domain?err=names`);
+  }
+
+  await supabase
+    .from("domain_orders")
+    .update({
+      name1,
+      name2,
+      name3,
+      suggested1: null,
+      suggested2: null,
+      suggested3: null,
+      chosen_domain: null,
+      status: "paid",
+    })
+    .eq("id", orderId)
+    .eq("teacher_id", user.id);
+
+  redirect(`/teacher/${courseId}/domain?ok=1`);
+}

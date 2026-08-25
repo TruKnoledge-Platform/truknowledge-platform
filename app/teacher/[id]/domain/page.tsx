@@ -1,6 +1,11 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
-import { saveWebAppSlug, startDomainCheckout } from "./actions";
+import {
+  saveWebAppSlug,
+  startDomainCheckout,
+  pickSuggestedName,
+  sendMoreNames,
+} from "./actions";
 
 const KIND_WORDS: Record<string, string> = {
   cname_diy: "Choice 2 — you add the CNAME",
@@ -42,10 +47,18 @@ export default async function TeacherDomainPage({
 
   const { data: orders } = await supabase
     .from("domain_orders")
-    .select("id, kind, host, name1, name2, name3, amount, created_at")
+    .select(
+      "id, kind, host, name1, name2, name3, suggested1, suggested2, suggested3, chosen_domain, amount, status, created_at"
+    )
     .eq("course_id", id)
     .eq("teacher_id", user.id)
     .order("created_at", { ascending: false });
+
+  const { data: teacherProf } = await supabase
+    .from("teacher_profiles")
+    .select("bought_domain")
+    .eq("user_id", user.id)
+    .maybeSingle();
 
   const diy = Number(settings?.price_cname_diy ?? 0);
   const setup = Number(settings?.price_cname_setup ?? 0);
@@ -53,6 +66,10 @@ export default async function TeacherDomainPage({
   const extra = Number(settings?.price_domain_extra ?? 0);
   const money = (n: number) => (n > 0 ? `$${n.toFixed(2)}` : "Price not set yet");
   const latest = orders?.[0];
+  const bought = teacherProf?.bought_domain || "";
+  const cnameName = latest?.host
+    ? latest.host.replace(/^https?:\/\//, "").split(".")[0]
+    : "app";
 
   return (
     <main className="min-h-screen bg-[#0B1020] text-[#F3E6D2] px-6 py-10">
@@ -67,20 +84,26 @@ export default async function TeacherDomainPage({
           Web App address
         </h1>
         <p className="mt-2 text-sm text-[#9AA3B5]">{course.title}</p>
+
         {latest && (
           <div className="mt-6 rounded-2xl border border-[#E8A24A]/40 bg-[#E8A24A]/10 p-5">
             <p className="text-sm font-medium text-[#E8A24A]">
-              {course.custom_host ? "Your custom address is live" : "Payment received"}
+              {course.custom_host || bought
+                ? "Your custom address is live"
+                : "Payment received"}
             </p>
             {course.custom_host ? (
               <p className="mt-2 text-sm leading-6">
                 Learners open{" "}
-                <a className="text-[#E8A24A] underline" href={`https://${course.custom_host}`}>
+                <a
+                  className="text-[#E8A24A] underline"
+                  href={`https://${course.custom_host}`}
+                >
                   {course.custom_host}
                 </a>
                 . Your main website is unchanged.
               </p>
-            ) : latest.kind === "cname_diy" && latest.host ? (
+            ) : latest.kind === "cname_diy" && latest.host && !course.custom_host ? (
               <div className="mt-2 text-sm leading-6">
                 <p>
                   Add this at the company where you bought the domain (GoDaddy,
@@ -89,10 +112,7 @@ export default async function TeacherDomainPage({
                 <p className="mt-3">
                   Type: <span className="text-[#E8A24A]">CNAME</span>
                   <br />
-                  Name / Host:{" "}
-                  <span className="text-[#E8A24A]">
-                    {latest.host.replace(/^https?:\/\//, "").split(".")[0]}
-                  </span>
+                  Name / Host: <span className="text-[#E8A24A]">{cnameName}</span>
                   <br />
                   Value / Points to:{" "}
                   <span className="text-[#E8A24A]">cname.vercel-dns.com</span>
@@ -104,10 +124,93 @@ export default async function TeacherDomainPage({
               </div>
             ) : (
               <p className="mt-2 text-sm leading-6">
-                We are working on this and will respond within 48 hours.
-                Thank you for your patronage and patience.
+                We are working on this and will respond within 48 hours. Thank
+                you for your patronage and patience.
               </p>
             )}
+            <p className="mt-3 text-xs text-[#9AA3B5]">
+              {KIND_WORDS[latest.kind] || latest.kind}
+              {latest.host ? ` · ${latest.host}` : ""}
+            </p>
+          </div>
+        )}
+
+        {bought && (
+          <div className="mt-6 rounded-2xl border border-[#E8A24A]/40 p-5 text-sm leading-6">
+            <p className="font-medium text-[#E8A24A]">Your bought domain is live</p>
+            <p className="mt-2">
+              All your courses:{" "}
+              <a className="text-[#E8A24A] underline" href={`https://${bought}`}>
+                {bought}
+              </a>
+            </p>
+            {course.webapp_slug && (
+              <p>
+                This course:{" "}
+                <a
+                  className="text-[#E8A24A] underline"
+                  href={`https://${bought}/${course.webapp_slug}`}
+                >
+                  {bought}/{course.webapp_slug}
+                </a>
+              </p>
+            )}
+          </div>
+        )}
+
+        {latest?.status === "waiting_choice" && (
+          <div className="mt-6 rounded-2xl border border-white/10 bg-[#12182A] p-6">
+            <h2 className="text-xl text-[#E8A24A]">Those names were not available</h2>
+            <p className="mt-2 text-sm text-[#9AA3B5]">
+              Tick one we can buy, or send three new names.
+            </p>
+            <form action={pickSuggestedName} className="mt-4 space-y-2 text-sm">
+              <input type="hidden" name="courseId" value={id} />
+              <input type="hidden" name="orderId" value={latest.id} />
+              {[latest.suggested1, latest.suggested2, latest.suggested3]
+                .filter(Boolean)
+                .map((name) => (
+                  <label key={name} className="flex items-center gap-2">
+                    <input type="radio" name="pick" value={name || ""} required />
+                    {name}
+                  </label>
+                ))}
+              <button
+                type="submit"
+                className="mt-3 rounded-full bg-[#E8A24A] px-5 py-2 font-medium text-[#0B1020]"
+              >
+                Buy this one
+              </button>
+            </form>
+            <form
+              action={sendMoreNames}
+              className="mt-8 space-y-3 border-t border-white/10 pt-4"
+            >
+              <input type="hidden" name="courseId" value={id} />
+              <input type="hidden" name="orderId" value={latest.id} />
+              <p className="text-sm">Or send three new names:</p>
+              <input
+                name="name1"
+                required
+                className="block w-full rounded-lg bg-[#0B1020] px-3 py-2"
+              />
+              <input
+                name="name2"
+                required
+                className="block w-full rounded-lg bg-[#0B1020] px-3 py-2"
+              />
+              <input
+                name="name3"
+                required
+                className="block w-full rounded-lg bg-[#0B1020] px-3 py-2"
+              />
+              <button
+                type="submit"
+                className="rounded-full border border-[#E8A24A] px-5 py-2 text-[#E8A24A]"
+              >
+                Send three new names
+              </button>
+            </form>
           </div>
         )}
 
@@ -133,7 +236,9 @@ export default async function TeacherDomainPage({
         {ok && <p className="mt-4 text-sm text-[#E8A24A]">Saved.</p>}
 
         <section className="mt-8 rounded-2xl border border-white/10 bg-[#12182A] p-6">
-          <p className="text-xs uppercase tracking-wide text-[#E8A24A]">Choice 1 — free</p>
+          <p className="text-xs uppercase tracking-wide text-[#E8A24A]">
+            Choice 1 — free
+          </p>
           <h2 className="mt-2 text-xl text-[#E8A24A]">A name on TruKnowledge</h2>
           <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6">
             <li>You type a short name (letters, numbers, hyphen).</li>
@@ -174,7 +279,9 @@ export default async function TeacherDomainPage({
         </section>
 
         <section className="mt-6 rounded-2xl border border-white/10 bg-[#12182A] p-6">
-          <p className="text-xs uppercase tracking-wide text-[#E8A24A]">Choice 2 — paid</p>
+          <p className="text-xs uppercase tracking-wide text-[#E8A24A]">
+            Choice 2 — paid
+          </p>
           <h2 className="mt-2 text-xl text-[#E8A24A]">
             Keep your own site, add app.yoursite.com
           </h2>
@@ -218,7 +325,9 @@ export default async function TeacherDomainPage({
         </section>
 
         <section className="mt-6 rounded-2xl border border-white/10 bg-[#12182A] p-6">
-          <p className="text-xs uppercase tracking-wide text-[#E8A24A]">Choice 3 — paid</p>
+          <p className="text-xs uppercase tracking-wide text-[#E8A24A]">
+            Choice 3 — paid
+          </p>
           <h2 className="mt-2 text-xl text-[#E8A24A]">We buy a domain for you</h2>
           <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6">
             <li>List three names you want, in order.</li>
@@ -290,6 +399,8 @@ export default async function TeacherDomainPage({
                   {o.name1
                     ? ` · ${[o.name1, o.name2, o.name3].filter(Boolean).join(", ")}`
                     : ""}
+                  {o.status === "waiting_choice" ? " · waiting for your pick" : ""}
+                  {o.status === "live" ? " · live" : ""}
                 </li>
               ))}
             </ul>
