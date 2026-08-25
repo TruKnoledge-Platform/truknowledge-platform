@@ -32,13 +32,10 @@ export default async function OwnerContact({
         {sent && (
           <p className="mt-4 text-sm text-[#E8A24A]">Reply sent.</p>
         )}
-        {err === "mail" && (
+        {err && (
           <p className="mt-4 text-sm text-red-300">
-            Mail did not send. Check RESEND_API_KEY on Vercel, then Redeploy.
+            {decodeURIComponent(err)}
           </p>
-        )}
-        {err === "1" && (
-          <p className="mt-4 text-sm text-red-300">Write a reply first.</p>
         )}
 
         <div className="mt-8 space-y-4">

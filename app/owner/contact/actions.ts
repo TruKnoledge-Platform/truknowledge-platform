@@ -9,21 +9,28 @@ export async function replyToContact(formData: FormData) {
 
   const email = String(formData.get("email") || "").trim();
   const body = String(formData.get("body") || "").trim();
-  if (!email || !body) redirect("/owner/contact?err=1");
+  if (!email || !body) redirect("/owner/contact?err=missing");
 
-  const key = process.env.RESEND_API_KEY;
-  if (!key) redirect("/owner/contact?err=mail");
+  const key = process.env.RESEND_API_KEY?.trim();
+  if (!key) redirect("/owner/contact?err=" + encodeURIComponent("RESEND_API_KEY is missing on Vercel"));
+
+  const from =
+    process.env.RESEND_FROM?.trim() ||
+    "TruKnowledge <hello@truknowledge.center>";
 
   const resend = new Resend(key);
   const result = await resend.emails.send({
-    from: process.env.RESEND_FROM || "TruKnowledge <hello@truknowledge.center>",
-    to: email,
+    from,
+    to: [email],
     subject: "Reply from TruKnowledge",
     text: body,
   });
 
   if (result.error) {
-    redirect("/owner/contact?err=mail");
+    const msg = String(
+      result.error.message || result.error.name || "Resend refused the send"
+    ).slice(0, 200);
+    redirect("/owner/contact?err=" + encodeURIComponent(msg));
   }
 
   redirect("/owner/contact?sent=1");
