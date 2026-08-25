@@ -12,7 +12,12 @@ export async function replyToContact(formData: FormData) {
   if (!email || !body) redirect("/owner/contact?err=missing");
 
   const key = process.env.RESEND_API_KEY?.trim();
-  if (!key) redirect("/owner/contact?err=" + encodeURIComponent("RESEND_API_KEY is missing on Vercel"));
+  if (!key) {
+    redirect(
+      "/owner/contact?err=" +
+        encodeURIComponent("RESEND_API_KEY is missing on Vercel")
+    );
+  }
 
   const from =
     process.env.RESEND_FROM?.trim() ||
