@@ -108,10 +108,16 @@ export default async function TeacherDomainPage({
             ) : latest.kind === "cname_diy" && latest.host && !course.custom_host ? (
               <div className="mt-2 text-sm leading-6">
                 <p>
-                  Add this at the company where you bought the domain (GoDaddy,
-                  Namecheap, etc.). Do not change your homepage.
+                  Make sure this subdomain / CNAME is added to your current
+                  domain subscription. You do not want to change your domain
+                  but ADD a subdomain.
                 </p>
                 <p className="mt-3">
+                  Please consult your hosting service for information on how to
+                  proceed with this if you are not already capable.
+                </p>
+                <p className="mt-4 font-medium text-[#E8A24A]">Note:</p>
+                <p className="mt-1">
                   Type: <span className="text-[#E8A24A]">CNAME</span>
                   <br />
                   Name / Host: <span className="text-[#E8A24A]">{cnameName}</span>
@@ -119,9 +125,10 @@ export default async function TeacherDomainPage({
                   Value / Points to:{" "}
                   <span className="text-[#E8A24A]">cname.vercel-dns.com</span>
                 </p>
-                <p className="mt-3 text-[#9AA3B5]">
-                  We will reply within 48 hours when it is live. Thank you for
-                  your patronage and patience.
+                <p className="mt-4 text-[#9AA3B5]">
+                  We will reply within 48 hours when it is live.
+                  <br />
+                  Thanks for being part of Team TruKnowledge!
                 </p>
               </div>
             ) : (
