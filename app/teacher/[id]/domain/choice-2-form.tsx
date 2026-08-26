@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { startDomainCheckout } from "./actions";
+import Choice3Form from "./choice-3-form";
 
 function hostLooksOk(raw: string) {
   const host = raw

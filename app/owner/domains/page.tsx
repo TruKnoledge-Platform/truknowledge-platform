@@ -1,5 +1,10 @@
 import { requireOwner } from "@/lib/is-owner";
-import { markCnameLive, markBoughtLive, suggestNames } from "./actions";
+import {
+  markCnameLive,
+  markBoughtLive,
+  markExtraLive,
+  suggestNames,
+} from "./actions";
 
 const KIND_WORDS: Record<string, string> = {
   cname_diy: "Choice 2 — they add the CNAME",
@@ -79,9 +84,9 @@ export default async function OwnerDomains() {
             const live =
               o.status === "live" ||
               !!courseOf(o.course_id)?.custom_host ||
-              (o.kind?.startsWith("domain") && !!boughtOf(o.teacher_id));
+              (o.kind === "domain_first" && !!boughtOf(o.teacher_id)) ||
+              (o.kind === "domain_extra" && o.status === "live");
             const isCname = o.kind === "cname_diy" || o.kind === "cname_setup";
-            const isBuy = o.kind === "domain_first" || o.kind === "domain_extra";
             return (
               <section
                 key={o.id}
@@ -151,8 +156,14 @@ export default async function OwnerDomains() {
                   </div>
                 )}
 
-                {isBuy && !live && (
+                {o.kind === "domain_first" && !live && (
                   <div className="mt-4 space-y-6 rounded-xl bg-[#0B1020] p-4 text-sm">
+                    <ol className="list-decimal space-y-2 pl-5 leading-6">
+                      <li>See if one of their 3 names can be bought.</li>
+                      <li>Buy it, then Vercel → Domains → Add that name.</li>
+                      <li>Wait until Valid, then mark live.</li>
+                      <li>If none are free, send 3 other names below.</li>
+                    </ol>
                     <form action={markBoughtLive} className="space-y-3">
                       <input type="hidden" name="orderId" value={o.id} />
                       <label className="block">
@@ -165,10 +176,6 @@ export default async function OwnerDomains() {
                           className="mt-1 block w-full rounded-lg bg-[#12182A] px-3 py-2"
                         />
                       </label>
-                      <p className="text-xs text-[#9AA3B5]">
-                        Add this domain in Vercel first, wait until Valid, then
-                        mark live.
-                      </p>
                       <button
                         type="submit"
                         className="rounded-full bg-[#E8A24A] px-5 py-2 font-medium text-[#0B1020]"
@@ -176,39 +183,66 @@ export default async function OwnerDomains() {
                         We bought this — mark live
                       </button>
                     </form>
-
-                    {o.kind === "domain_first" && (
-                      <form
-                        action={suggestNames}
-                        className="space-y-3 border-t border-white/10 pt-4"
+                    <form
+                      action={suggestNames}
+                      className="space-y-3 border-t border-white/10 pt-4"
+                    >
+                      <input type="hidden" name="orderId" value={o.id} />
+                      <p>None of their 3 are free? Send 3 others:</p>
+                      <input
+                        name="suggested1"
+                        required
+                        placeholder="First suggestion"
+                        className="block w-full rounded-lg bg-[#12182A] px-3 py-2"
+                      />
+                      <input
+                        name="suggested2"
+                        required
+                        placeholder="Second suggestion"
+                        className="block w-full rounded-lg bg-[#12182A] px-3 py-2"
+                      />
+                      <input
+                        name="suggested3"
+                        required
+                        placeholder="Third suggestion"
+                        className="block w-full rounded-lg bg-[#12182A] px-3 py-2"
+                      />
+                      <button
+                        type="submit"
+                        className="rounded-full border border-[#E8A24A] px-5 py-2 text-[#E8A24A]"
                       >
-                        <input type="hidden" name="orderId" value={o.id} />
-                        <p>None of their 3 are free? Send 3 others:</p>
-                        <input
-                          name="suggested1"
-                          required
-                          placeholder="First suggestion"
-                          className="block w-full rounded-lg bg-[#12182A] px-3 py-2"
-                        />
-                        <input
-                          name="suggested2"
-                          required
-                          placeholder="Second suggestion"
-                          className="block w-full rounded-lg bg-[#12182A] px-3 py-2"
-                        />
-                        <input
-                          name="suggested3"
-                          required
-                          placeholder="Third suggestion"
-                          className="block w-full rounded-lg bg-[#12182A] px-3 py-2"
-                        />
-                        <button
-                          type="submit"
-                          className="rounded-full border border-[#E8A24A] px-5 py-2 text-[#E8A24A]"
-                        >
-                          Send these 3 to the teacher
-                        </button>
-                      </form>
+                        Send these 3 to the teacher
+                      </button>
+                    </form>
+                  </div>
+                )}
+
+                {o.kind === "domain_extra" && !live && (
+                  <div className="mt-4 rounded-xl bg-[#0B1020] p-4 text-sm leading-6">
+                    {boughtOf(o.teacher_id) && courseOf(o.course_id)?.webapp_slug ? (
+                      <>
+                        <p>
+                          Folder (no new domain):{" "}
+                          <span className="text-[#E8A24A]">
+                            {boughtOf(o.teacher_id)}/
+                            {courseOf(o.course_id)?.webapp_slug}
+                          </span>
+                        </p>
+                        <form action={markExtraLive} className="mt-4">
+                          <input type="hidden" name="orderId" value={o.id} />
+                          <button
+                            type="submit"
+                            className="rounded-full bg-[#E8A24A] px-5 py-2 font-medium text-[#0B1020]"
+                          >
+                            Mark this course live
+                          </button>
+                        </form>
+                      </>
+                    ) : (
+                      <p className="text-red-300">
+                        Wait until their first domain is live, and they have
+                        saved a free short name (Choice 1).
+                      </p>
                     )}
                   </div>
                 )}

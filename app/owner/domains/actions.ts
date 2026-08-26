@@ -58,6 +58,39 @@ export async function markBoughtLive(formData: FormData) {
   redirect("/owner/domains");
 }
 
+export async function markExtraLive(formData: FormData) {
+  const { supabase } = await requireOwner();
+  const orderId = String(formData.get("orderId") || "");
+  if (!orderId) redirect("/owner/domains");
+
+  const { data: order } = await supabase
+    .from("domain_orders")
+    .select("id, teacher_id, course_id, kind")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (!order?.teacher_id || !order.course_id || order.kind !== "domain_extra") {
+    redirect("/owner/domains");
+  }
+
+  const { data: teacher } = await supabase
+    .from("teacher_profiles")
+    .select("bought_domain")
+    .eq("user_id", order.teacher_id)
+    .maybeSingle();
+  const { data: course } = await supabase
+    .from("courses")
+    .select("webapp_slug")
+    .eq("id", order.course_id)
+    .maybeSingle();
+
+  if (!teacher?.bought_domain || !course?.webapp_slug) {
+    redirect("/owner/domains");
+  }
+
+  await supabase.from("domain_orders").update({ status: "live" }).eq("id", orderId);
+  redirect("/owner/domains");
+}
+
 export async function suggestNames(formData: FormData) {
   const { supabase } = await requireOwner();
   const orderId = String(formData.get("orderId") || "");
