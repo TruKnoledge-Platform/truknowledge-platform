@@ -530,6 +530,29 @@ export default function EditCoursePage() {
           </div>
 
           <div>
+            <p className="mb-2 text-sm text-slate-300">Web App icon</p>
+            <p className="mb-2 text-xs text-slate-500">
+              Square image for the phone home screen. PNG or JPG, about 512×512.
+            </p>
+            <label className="inline-flex cursor-pointer items-center rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium hover:bg-orange-600">
+              {iconUrl ? "Change icon" : "Add icon"}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={(e) => handleIcon(e.target.files?.[0])}
+              />
+            </label>
+            {iconUrl && (
+              <img
+                src={iconUrl}
+                alt="Web App icon"
+                className="mt-3 h-16 w-16 rounded-xl border border-slate-800 object-cover"
+              />
+            )}
+          </div>
+
+          <div>
             <label className="mb-2 block text-sm text-slate-300">Short description</label>
             <textarea
               value={description}
@@ -564,30 +587,6 @@ export default function EditCoursePage() {
                 src={thumbnail}
                 alt="Course"
                 className="mt-3 w-[20%] rounded-lg border border-slate-800"
-              />
-            )}
-          </div>
-
-          <div>
-            <p className="mb-2 text-sm text-slate-300">Web App icon</p>
-            <p className="mb-2 text-xs text-slate-500">
-              Square image for the phone home screen. PNG or JPG, about 512×512.
-              This is not the course image above.
-            </p>
-            <label className="inline-flex cursor-pointer items-center rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium hover:bg-orange-600">
-              Upload icon
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                className="hidden"
-                onChange={(e) => handleIcon(e.target.files?.[0])}
-              />
-            </label>
-            {iconUrl && (
-              <img
-                src={iconUrl}
-                alt="Web App icon"
-                className="mt-3 h-16 w-16 rounded-xl border border-slate-800 object-cover"
               />
             )}
           </div>
