@@ -16,6 +16,7 @@ export async function sendMail(opts: {
   const result = await resend.emails.send({
     from,
     to: [opts.to],
+    replyTo: "nowliving.today@gmail.com",
     subject: opts.subject,
     text: opts.text,
   });
