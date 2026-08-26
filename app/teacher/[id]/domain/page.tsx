@@ -12,7 +12,7 @@ import Choice3Form from "./choice-3-form";
 const KIND_WORDS: Record<string, string> = {
   cname_diy: "Choice 2 — you add the CNAME",
   cname_setup: "Choice 2 — we add the CNAME",
-  domain_first: "Choice 3 — first course, we buy the domain",
+  domain_first: "Choice 3 — first course, we acquire the domain",
   domain_extra: "Choice 3 — extra course on that domain",
 };
 
@@ -139,7 +139,7 @@ export default async function TeacherDomainPage({
 
         {bought && (
           <div className="mt-6 rounded-2xl border border-[#E8A24A]/40 p-5 text-sm leading-6">
-            <p className="font-medium text-[#E8A24A]">Your bought domain is live</p>
+            <p className="font-medium text-[#E8A24A]">Your acquired domain is live</p>
             <p className="mt-2">
               All your courses:{" "}
               <a className="text-[#E8A24A] underline" href={`https://${bought}`}>
@@ -164,7 +164,7 @@ export default async function TeacherDomainPage({
           <div className="mt-6 rounded-2xl border border-white/10 bg-[#12182A] p-6">
             <h2 className="text-xl text-[#E8A24A]">Those names were not available</h2>
             <p className="mt-2 text-sm text-[#9AA3B5]">
-              Tick one we can buy, or send three new names.
+              Tick one we can acquire, or send three new names.
             </p>
             <form action={pickSuggestedName} className="mt-4 space-y-2 text-sm">
               <input type="hidden" name="courseId" value={id} />
@@ -181,7 +181,7 @@ export default async function TeacherDomainPage({
                 type="submit"
                 className="mt-3 rounded-full bg-[#E8A24A] px-5 py-2 font-medium text-[#0B1020]"
               >
-                Buy this one
+                Acquire this one
               </button>
             </form>
             <form
@@ -322,10 +322,10 @@ export default async function TeacherDomainPage({
           <p className="text-xs uppercase tracking-wide text-[#E8A24A]">
             Choice 3 — paid
           </p>
-          <h2 className="mt-2 text-xl text-[#E8A24A]">We buy a domain for you</h2>
+          <h2 className="mt-2 text-xl text-[#E8A24A]">We acquire a domain for you</h2>
           <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6">
             <li>List three names you want, in order.</li>
-            <li>We try to buy one, then attach your Web Apps to it.</li>
+            <li>We try to acquire one, then attach your Web Apps to it.</li>
             <li>Courses look like yourdomain.com/foundations</li>
             <li>Extra course: save a free short name first (Choice 1).</li>
             <li>If none work, we suggest others. You tick or send three more.</li>

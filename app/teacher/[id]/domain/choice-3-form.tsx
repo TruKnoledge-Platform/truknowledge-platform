@@ -95,7 +95,7 @@ export default function Choice3Form({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
           <div className="w-full max-w-md rounded-2xl border border-[#E8A24A]/40 bg-[#12182A] p-6 text-[#F3E6D2]">
             <p className="text-lg text-[#E8A24A]">
-              {kind === "domain_extra" ? "Extra course on your domain" : "We buy a domain"}
+              {kind === "domain_extra" ? "Extra course on your domain" : "We acquire a domain"}
             </p>
             {kind === "domain_extra" && extraBlocked ? (
               <p className="mt-3 text-sm leading-6 text-red-300">
@@ -112,9 +112,9 @@ export default function Choice3Form({
               </p>
             ) : (
               <p className="mt-3 text-sm leading-6">
-                We will try to buy one of your three names. All of your courses
-                will live on that domain as folders (yourdomain.com/shortname).
-                We reply within 48 hours.
+                We will try to acquire one of your three names. All of your
+                courses will live on that domain as folders
+                (yourdomain.com/shortname). We reply within 48 hours.
               </p>
             )}
             <div className="mt-6 flex flex-wrap gap-3">
