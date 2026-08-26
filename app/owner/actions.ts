@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient as createSupabase } from "@supabase/supabase-js";
 import { requireOwner } from "@/lib/is-owner";
+import { revalidatePath } from "next/cache";
 
 export async function saveFee(formData: FormData) {
   const { supabase } = await requireOwner();
@@ -37,6 +38,27 @@ export async function saveDomainPrices(formData: FormData) {
     })
     .eq("id", 1);
   redirect("/owner");
+}
+
+export async function saveSiteIcon(formData: FormData) {
+  const { supabase } = await requireOwner();
+  const url = String(formData.get("url") || "").trim();
+  if (!url) return;
+  await supabase
+    .from("platform_settings")
+    .update({ site_icon_url: url, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  revalidatePath("/", "layout");
+}
+
+export async function saveCourseIcon(formData: FormData) {
+  const { supabase } = await requireOwner();
+  const url = String(formData.get("url") || "").trim();
+  const courseId = String(formData.get("courseId") || "");
+  if (!url || !courseId) return;
+  await supabase.from("courses").update({ icon_url: url }).eq("id", courseId);
+  revalidatePath("/", "layout");
+  revalidatePath(`/webapp/${courseId}`);
 }
 
 export async function pauseCourse(formData: FormData) {
