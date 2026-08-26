@@ -5,6 +5,29 @@ import { redirect } from "next/navigation";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase-server";
 
+const RESERVED = new Set([
+  "www",
+  "mail",
+  "email",
+  "ftp",
+  "api",
+  "app",
+  "admin",
+  "owner",
+  "teacher",
+  "learn",
+  "login",
+  "signup",
+  "auth",
+  "checkout",
+  "webapp",
+  "contact",
+  "unlisted",
+  "payouts",
+  "courses",
+  "cdn",
+]);
+
 function cleanSlug(raw: string) {
   return raw
     .toLowerCase()
@@ -13,6 +36,25 @@ function cleanSlug(raw: string) {
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "")
     .slice(0, 40);
+}
+
+function cleanHost(raw: string) {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, "")
+    .replace(/\/.*$/, "")
+    .split(":")[0];
+}
+
+function hostOk(host: string) {
+  if (!host) return false;
+  if (host.endsWith("truknowledge.center")) return false;
+  if (host.endsWith("vercel.app")) return false;
+  const parts = host.split(".").filter(Boolean);
+  if (parts.length < 3) return false;
+  if (parts[0] === "www") return false;
+  return true;
 }
 
 export async function saveWebAppSlug(formData: FormData) {
@@ -26,6 +68,7 @@ export async function saveWebAppSlug(formData: FormData) {
   const slug = cleanSlug(String(formData.get("slug") || ""));
   if (!courseId) redirect("/teacher");
   if (!slug) redirect(`/teacher/${courseId}/domain?err=name`);
+  if (RESERVED.has(slug)) redirect(`/teacher/${courseId}/domain?err=reserved`);
 
   const { data: course } = await supabase
     .from("courses")
@@ -44,7 +87,7 @@ export async function saveWebAppSlug(formData: FormData) {
   if (taken) redirect(`/teacher/${courseId}/domain?err=taken`);
 
   await supabase.from("courses").update({ webapp_slug: slug }).eq("id", courseId);
-  redirect(`/teacher/${courseId}`);
+  redirect(`/teacher/${courseId}/domain?ok=1`);
 }
 
 const KIND_LABEL: Record<string, string> = {
@@ -70,7 +113,7 @@ export async function startDomainCheckout(formData: FormData) {
 
   const courseId = String(formData.get("courseId") || "");
   const kind = String(formData.get("kind") || "");
-  const host = String(formData.get("host") || "").trim();
+  const host = cleanHost(String(formData.get("host") || ""));
   const name1 = String(formData.get("name1") || "").trim();
   const name2 = String(formData.get("name2") || "").trim();
   const name3 = String(formData.get("name3") || "").trim();
@@ -79,17 +122,20 @@ export async function startDomainCheckout(formData: FormData) {
 
   const { data: course } = await supabase
     .from("courses")
-    .select("id, title")
+    .select("id, title, webapp_slug")
     .eq("id", courseId)
     .eq("teacher_id", user.id)
     .maybeSingle();
   if (!course) redirect("/teacher");
 
-  if ((kind === "cname_diy" || kind === "cname_setup") && !host) {
-    redirect(`/teacher/${courseId}/domain?err=host`);
+  if (kind === "cname_diy" || kind === "cname_setup") {
+    if (!hostOk(host)) redirect(`/teacher/${courseId}/domain?err=host`);
   }
   if ((kind === "domain_first" || kind === "domain_extra") && (!name1 || !name2 || !name3)) {
     redirect(`/teacher/${courseId}/domain?err=names`);
+  }
+  if (kind === "domain_extra" && !course.webapp_slug) {
+    redirect(`/teacher/${courseId}/domain?err=slugfirst`);
   }
 
   const { data: settings } = await supabase

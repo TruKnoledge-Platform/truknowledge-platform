@@ -39,7 +39,10 @@ export default async function OwnerDomains() {
     ? await supabase.from("profiles").select("id, email").in("id", teacherIds)
     : { data: [] };
   const { data: courses } = courseIds.length
-    ? await supabase.from("courses").select("id, title, custom_host").in("id", courseIds)
+    ? await supabase
+        .from("courses")
+        .select("id, title, custom_host, webapp_slug")
+        .in("id", courseIds)
     : { data: [] };
   const { data: teachers } = teacherIds.length
     ? await supabase
@@ -66,7 +69,8 @@ export default async function OwnerDomains() {
           Domain orders
         </h1>
         <p className="mt-2 text-sm text-[#9AA3B5]">
-          Choice 2: Vercel + Mark live. Choice 3: buy a name or send 3 others.
+          Choice 2: add in Vercel, wait Valid, Mark live. Choice 3: buy a name
+          or send 3 others.
         </p>
 
         <div className="mt-8 space-y-4">
@@ -75,7 +79,7 @@ export default async function OwnerDomains() {
             const live =
               o.status === "live" ||
               !!courseOf(o.course_id)?.custom_host ||
-              !!boughtOf(o.teacher_id);
+              (o.kind?.startsWith("domain") && !!boughtOf(o.teacher_id));
             const isCname = o.kind === "cname_diy" || o.kind === "cname_setup";
             const isBuy = o.kind === "domain_first" || o.kind === "domain_extra";
             return (
@@ -116,13 +120,25 @@ export default async function OwnerDomains() {
 
                 {isCname && bits && !live && (
                   <div className="mt-4 rounded-xl bg-[#0B1020] p-4 text-sm leading-6">
-                    <p>In Vercel → Domains, add:</p>
-                    <p className="text-[#E8A24A]">{bits.full}</p>
-                    {o.kind === "cname_setup" && (
-                      <p className="mt-2">
-                        DNS: CNAME · {bits.name} · cname.vercel-dns.com
-                      </p>
-                    )}
+                    <p className="font-medium text-[#E8A24A]">Your steps</p>
+                    <ol className="mt-2 list-decimal space-y-2 pl-5">
+                      <li>
+                        Vercel → this project → Settings → Domains → Add{" "}
+                        <span className="text-[#E8A24A]">{bits.full}</span>
+                      </li>
+                      <li>
+                        DNS (Name / Host{" "}
+                        <span className="text-[#E8A24A]">{bits.name}</span>,
+                        Type CNAME, Value{" "}
+                        <span className="text-[#E8A24A]">cname.vercel-dns.com</span>
+                        ).{" "}
+                        {o.kind === "cname_diy"
+                          ? "They add this. You only check it."
+                          : "You add this at their domain company."}
+                      </li>
+                      <li>Wait until Vercel says Valid on that name.</li>
+                      <li>Mark live.</li>
+                    </ol>
                     <form action={markCnameLive} className="mt-4">
                       <input type="hidden" name="orderId" value={o.id} />
                       <button

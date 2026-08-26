@@ -15,6 +15,7 @@ export async function sendOwnerContact(formData: FormData) {
 
   await supabase.from("owner_contacts").insert({
     sender_id: user.id,
+    member_id: user.id,
     body,
   });
 

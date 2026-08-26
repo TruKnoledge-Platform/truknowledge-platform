@@ -107,7 +107,7 @@ export default async function TeacherDomainPage({
               <div className="mt-2 text-sm leading-6">
                 <p>
                   Add this at the company where you bought the domain (GoDaddy,
-                  Namecheap, etc.). Your homepage stays as it is.
+                  Namecheap, etc.). Do not change your homepage.
                 </p>
                 <p className="mt-3">
                   Type: <span className="text-[#E8A24A]">CNAME</span>
@@ -220,9 +220,19 @@ export default async function TeacherDomainPage({
         {err === "name" && (
           <p className="mt-4 text-sm text-red-300">Enter a short name.</p>
         )}
+        {err === "reserved" && (
+          <p className="mt-4 text-sm text-red-300">That short name is reserved.</p>
+        )}
         {err === "host" && (
           <p className="mt-4 text-sm text-red-300">
-            Enter the address, like app.yoursite.com
+            Use a sub-address like app.yoursite.com — not yoursite.com and not
+            www.yoursite.com. That keeps your homepage as it is.
+          </p>
+        )}
+        {err === "slugfirst" && (
+          <p className="mt-4 text-sm text-red-300">
+            Save a free short name (Choice 1) first. Extra courses use that as
+            the folder: yourdomain.com/shortname
           </p>
         )}
         {err === "names" && (
@@ -232,6 +242,9 @@ export default async function TeacherDomainPage({
           <p className="mt-4 text-sm text-red-300">
             This option has no price yet. Try again later.
           </p>
+        )}
+        {err === "stripe" && (
+          <p className="mt-4 text-sm text-red-300">Payment could not start.</p>
         )}
         {ok && <p className="mt-4 text-sm text-[#E8A24A]">Saved.</p>}
 
@@ -271,9 +284,12 @@ export default async function TeacherDomainPage({
           {course.webapp_slug && (
             <p className="mt-4 text-sm">
               Free address:{" "}
-              <span className="text-[#E8A24A]">
+              <a
+                className="text-[#E8A24A] underline"
+                href={`https://${course.webapp_slug}.truknowledge.center`}
+              >
                 {course.webapp_slug}.truknowledge.center
-              </span>
+              </a>
             </p>
           )}
         </section>
@@ -286,14 +302,15 @@ export default async function TeacherDomainPage({
             Keep your own site, add app.yoursite.com
           </h2>
           <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6">
+            <li>Must be a sub-address: app.yoursite.com (not yoursite.com).</li>
             <li>Your homepage stays as it is.</li>
-            <li>Learners type app.yoursite.com and stay on that address.</li>
+            <li>Learners type that address and stay on it.</li>
             <li>After payment we reply within 48 hours.</li>
           </ul>
           <form action={startDomainCheckout} className="mt-6 space-y-4">
             <input type="hidden" name="courseId" value={id} />
             <label className="block text-sm">
-              Address you want (example: app.yoursite.com)
+              Sub-address you want (example: app.yoursite.com)
               <input
                 name="host"
                 required
@@ -333,6 +350,7 @@ export default async function TeacherDomainPage({
             <li>List three names you want, in order.</li>
             <li>We try to buy one, then attach your Web Apps to it.</li>
             <li>Courses look like yourdomain.com/foundations</li>
+            <li>Extra course: save a free short name first (Choice 1).</li>
             <li>If none work, we suggest others. You tick or send three more.</li>
             <li>After payment we reply within 48 hours.</li>
           </ul>
