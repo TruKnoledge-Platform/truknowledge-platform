@@ -13,7 +13,6 @@ export default async function OwnerHome() {
     { count: enrollmentCount },
     { count: viewCount },
     { data: payments },
-    { data: courses },
   ] = await Promise.all([
     supabase
       .from("platform_settings")
@@ -31,10 +30,6 @@ export default async function OwnerHome() {
     supabase.from("enrollments").select("id", { count: "exact", head: true }),
     supabase.from("course_views").select("id", { count: "exact", head: true }),
     supabase.from("payments").select("amount, teacher_id, created_at"),
-    supabase
-      .from("courses")
-      .select("id, title, icon_url, thumbnail_url, is_published")
-      .order("created_at", { ascending: false }),
   ]);
 
   const fee = Number(settings?.fee_percent ?? 15);
@@ -89,42 +84,6 @@ export default async function OwnerHome() {
           </p>
           <div className="mt-4">
             <IconUpload kind="site" currentUrl={settings?.site_icon_url} />
-          </div>
-        </section>
-
-        <section className="mt-8 rounded-2xl border border-white/10 bg-[#12182A] p-6">
-          <h2
-            className="text-xl text-[#E8A24A]"
-            style={{ fontFamily: "var(--font-display), Georgia, serif" }}
-          >
-            Course Web App icons
-          </h2>
-          <p className="mt-2 text-sm text-[#9AA3B5]">
-            Each course can have its own home-screen icon. If you skip one, the
-            course thumbnail is used.
-          </p>
-          <div className="mt-6 space-y-4">
-            {(courses || []).map((course) => (
-              <div
-                key={course.id}
-                className="flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4 first:border-t-0 first:pt-0"
-              >
-                <div>
-                  <p className="font-medium">{course.title}</p>
-                  <p className="text-xs text-[#9AA3B5]">
-                    {course.is_published ? "Published" : "Draft"}
-                  </p>
-                </div>
-                <IconUpload
-                  kind="course"
-                  courseId={course.id}
-                  currentUrl={course.icon_url || course.thumbnail_url}
-                />
-              </div>
-            ))}
-            {!courses?.length && (
-              <p className="text-sm text-[#9AA3B5]">No courses yet.</p>
-            )}
           </div>
         </section>
 

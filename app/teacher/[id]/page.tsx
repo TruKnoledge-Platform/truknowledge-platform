@@ -44,6 +44,7 @@ export default function EditCoursePage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [thumbnail, setThumbnail] = useState("");
+  const [iconUrl, setIconUrl] = useState("");
   const [previewVideo, setPreviewVideo] = useState("");
   const [price, setPrice] = useState("0");
   const [template, setTemplate] = useState("classic_linear");
@@ -147,12 +148,11 @@ export default function EditCoursePage() {
   }
 
   useEffect(() => {
-
     async function loadCourse() {
       const { data, error } = await supabase
         .from("courses")
         .select(
-          "title, description, template, is_published, thumbnail_url, price, preview_video_url, discussions_enabled, webapp_slug"
+          "title, description, template, is_published, thumbnail_url, icon_url, price, preview_video_url, discussions_enabled, webapp_slug"
         )
         .eq("id", id)
         .single();
@@ -166,11 +166,12 @@ export default function EditCoursePage() {
       setTitle(data.title || "");
       setDescription(data.description || "");
       setThumbnail(data.thumbnail_url || "");
+      setIconUrl(data.icon_url || "");
       setPreviewVideo(data.preview_video_url || "");
       setPrice(String(data.price ?? 0));
       setTemplate(data.template || "classic_linear");
       setIsPublished(Boolean(data.is_published));
-	setDiscussionsEnabled(Boolean(data.discussions_enabled));
+      setDiscussionsEnabled(Boolean(data.discussions_enabled));
       if (data.webapp_slug) {
         setWebAppUrl(`https://${data.webapp_slug}.truknowledge.center`);
       } else {
@@ -195,6 +196,7 @@ export default function EditCoursePage() {
         title,
         description,
         thumbnail_url: thumbnail,
+        icon_url: iconUrl,
         preview_video_url: previewVideo,
         template,
         price: Number(price) || 0,
@@ -221,6 +223,19 @@ export default function EditCoursePage() {
     try {
       const url = await uploadFile(file, "thumbnails");
       setThumbnail(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    }
+    setUploading(false);
+  }
+
+  async function handleIcon(file: File | undefined) {
+    if (!file) return;
+    setUploading(true);
+    setError("");
+    try {
+      const url = await uploadFile(file, "thumbnails");
+      setIconUrl(url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
     }
@@ -488,7 +503,7 @@ export default function EditCoursePage() {
           <p className="mt-3 break-all rounded-lg bg-[#0B1220] px-3 py-2 text-sm text-orange-300">
             {webAppUrl}
           </p>
-	<a
+          <a
             href={`/teacher/${id}/domain`}
             className="mt-3 mr-3 inline-block rounded-lg border border-orange-500 px-4 py-2 text-sm text-orange-400"
           >
@@ -536,7 +551,7 @@ export default function EditCoursePage() {
               />
             </label>
             <p className="mt-2 text-xs text-slate-500">
-              Click the orange button. JPG or PNG. You can still paste a URL below.
+              Wide picture for the course card. JPG or PNG.
             </p>
             <input
               value={thumbnail}
@@ -549,6 +564,30 @@ export default function EditCoursePage() {
                 src={thumbnail}
                 alt="Course"
                 className="mt-3 w-[20%] rounded-lg border border-slate-800"
+              />
+            )}
+          </div>
+
+          <div>
+            <p className="mb-2 text-sm text-slate-300">Web App icon</p>
+            <p className="mb-2 text-xs text-slate-500">
+              Square image for the phone home screen. PNG or JPG, about 512×512.
+              This is not the course image above.
+            </p>
+            <label className="inline-flex cursor-pointer items-center rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium hover:bg-orange-600">
+              Upload icon
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={(e) => handleIcon(e.target.files?.[0])}
+              />
+            </label>
+            {iconUrl && (
+              <img
+                src={iconUrl}
+                alt="Web App icon"
+                className="mt-3 h-16 w-16 rounded-xl border border-slate-800 object-cover"
               />
             )}
           </div>
