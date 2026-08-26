@@ -6,6 +6,7 @@ import {
   pickSuggestedName,
   sendMoreNames,
 } from "./actions";
+import Choice2Form from "./choice-2-form";
 
 const KIND_WORDS: Record<string, string> = {
   cname_diy: "Choice 2 — you add the CNAME",
@@ -307,38 +308,13 @@ export default async function TeacherDomainPage({
             <li>Learners type that address and stay on it.</li>
             <li>After payment we reply within 48 hours.</li>
           </ul>
-          <form action={startDomainCheckout} className="mt-6 space-y-4">
-            <input type="hidden" name="courseId" value={id} />
-            <label className="block text-sm">
-              Sub-address you want (example: app.yoursite.com)
-              <input
-                name="host"
-                required
-                placeholder="app.yoursite.com"
-                className="mt-1 block w-full rounded-lg bg-[#0B1020] px-3 py-2"
-              />
-            </label>
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="submit"
-                name="kind"
-                value="cname_diy"
-                disabled={diy <= 0}
-                className="rounded-full bg-[#E8A24A] px-5 py-2 font-medium text-[#0B1020] disabled:opacity-40"
-              >
-                I add the CNAME — {money(diy)}
-              </button>
-              <button
-                type="submit"
-                name="kind"
-                value="cname_setup"
-                disabled={setup <= 0}
-                className="rounded-full border border-[#E8A24A] px-5 py-2 text-[#E8A24A] disabled:opacity-40"
-              >
-                You add it — {money(setup)}
-              </button>
-            </div>
-          </form>
+          <Choice2Form
+            courseId={id}
+            diyLabel={`I add the CNAME — ${money(diy)}`}
+            setupLabel={`You add it — ${money(setup)}`}
+            diyDisabled={diy <= 0}
+            setupDisabled={setup <= 0}
+          />
         </section>
 
         <section className="mt-6 rounded-2xl border border-white/10 bg-[#12182A] p-6">
