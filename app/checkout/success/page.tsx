@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase-server";
-import { sendMail } from "@/lib/send-mail";
+import { sendMail } from "@/lib/send-email";
 import SavePlace from "@/app/save-place";
 
 const KIND_WORDS: Record<string, string> = {
