@@ -241,4 +241,130 @@ export default async function TeacherDomainPage({
           <p className="mt-4 text-sm text-red-300">Enter three names, in order.</p>
         )}
         {err === "price" && (
-          <p className="mt-4 
+          <p className="mt-4 text-sm text-red-300">
+            This option has no price yet. Try again later.
+          </p>
+        )}
+        {err === "stripe" && (
+          <p className="mt-4 text-sm text-red-300">Payment could not start.</p>
+        )}
+        {ok && <p className="mt-4 text-sm text-[#E8A24A]">Saved.</p>}
+
+        <section className="mt-8 rounded-2xl border border-white/10 bg-[#12182A] p-6">
+          <p className="text-xs uppercase tracking-wide text-[#E8A24A]">
+            Choice 1 — free
+          </p>
+          <h2 className="mt-2 text-xl text-[#E8A24A]">A name on TruKnowledge</h2>
+          <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6">
+            <li>You type a short name (letters, numbers, hyphen).</li>
+            <li>
+              Learners open{" "}
+              <span className="text-[#E8A24A]">name.truknowledge.center</span>
+            </li>
+            <li>No payment. The long /webapp/ link still works.</li>
+          </ul>
+          <form action={saveWebAppSlug} className="mt-6 flex flex-wrap items-end gap-3">
+            <input type="hidden" name="courseId" value={id} />
+            <label className="text-sm">
+              Short name
+              <input
+                name="slug"
+                required
+                defaultValue={course.webapp_slug || ""}
+                placeholder="neurofunc"
+                className="mt-1 block w-56 rounded-lg bg-[#0B1020] px-3 py-2"
+              />
+            </label>
+            <span className="pb-2 text-sm text-[#9AA3B5]">.truknowledge.center</span>
+            <button
+              type="submit"
+              className="rounded-full bg-[#E8A24A] px-5 py-2 font-medium text-[#0B1020]"
+            >
+              Save name
+            </button>
+          </form>
+          {course.webapp_slug && (
+            <p className="mt-4 text-sm">
+              Free address:{" "}
+              <a
+                className="text-[#E8A24A] underline"
+                href={`https://${course.webapp_slug}.truknowledge.center`}
+              >
+                {course.webapp_slug}.truknowledge.center
+              </a>
+            </p>
+          )}
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-white/10 bg-[#12182A] p-6">
+          <p className="text-xs uppercase tracking-wide text-[#E8A24A]">
+            Choice 2 — paid
+          </p>
+          <h2 className="mt-2 text-xl text-[#E8A24A]">
+            Keep your own site, add app.yoursite.com
+          </h2>
+          <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6">
+            <li>Must be a sub-address: app.yoursite.com (not yoursite.com).</li>
+            <li>Your homepage stays as it is.</li>
+            <li>Learners type that address and stay on it.</li>
+            <li>After payment we reply within 48 hours.</li>
+          </ul>
+          <Choice2Form
+            courseId={id}
+            diyLabel={`I add the CNAME — ${money(diy)}`}
+            setupLabel={`You add it — ${money(setup)}`}
+            diyDisabled={diy <= 0}
+            setupDisabled={setup <= 0}
+          />
+        </section>
+
+        <section className="mt-6 rounded-2xl border border-white/10 bg-[#12182A] p-6">
+          <p className="text-xs uppercase tracking-wide text-[#E8A24A]">
+            Choice 3 — paid
+          </p>
+          <h2 className="mt-2 text-xl text-[#E8A24A]">We buy a domain for you</h2>
+          <ul className="mt-4 list-disc space-y-2 pl-5 text-sm leading-6">
+            <li>List three names you want, in order.</li>
+            <li>We try to buy one, then attach your Web Apps to it.</li>
+            <li>Courses look like yourdomain.com/foundations</li>
+            <li>Extra course: save a free short name first (Choice 1).</li>
+            <li>If none work, we suggest others. You tick or send three more.</li>
+            <li>After payment we reply within 48 hours.</li>
+          </ul>
+          <Choice3Form
+            courseId={id}
+            hasSlug={!!course.webapp_slug}
+            slug={course.webapp_slug || "shortname"}
+            bought={bought}
+            firstLabel={`First course — ${money(first)}`}
+            extraLabel={`Extra course — ${money(extra)}`}
+            firstDisabled={first <= 0}
+            extraDisabled={extra <= 0}
+          />
+        </section>
+
+        {!!orders?.length && (
+          <section className="mt-6 rounded-2xl border border-white/10 p-6">
+            <h2 className="text-lg text-[#E8A24A]">Your requests</h2>
+            <ul className="mt-3 space-y-3 text-sm">
+              {orders.map((o) => (
+                <li key={o.id} className="text-[#9AA3B5]">
+                  <span className="text-[#F3E6D2]">
+                    {KIND_WORDS[o.kind] || o.kind}
+                  </span>
+                  {" · "}${Number(o.amount).toFixed(2)}
+                  {o.host ? ` · ${o.host}` : ""}
+                  {o.name1
+                    ? ` · ${[o.name1, o.name2, o.name3].filter(Boolean).join(", ")}`
+                    : ""}
+                  {o.status === "waiting_choice" ? " · waiting for your pick" : ""}
+                  {o.status === "live" ? " · live" : ""}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+      </div>
+    </main>
+  );
+}

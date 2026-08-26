@@ -120,4 +120,30 @@ export default function Choice3Form({
             <div className="mt-6 flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => 
+                onClick={() => setOpen(false)}
+                className="rounded-full border border-white/20 px-5 py-2"
+              >
+                Cancel
+              </button>
+              {kind && !extraBlocked && !namesMissing && (
+                <form action={startDomainCheckout}>
+                  <input type="hidden" name="courseId" value={courseId} />
+                  <input type="hidden" name="kind" value={kind} />
+                  <input type="hidden" name="name1" value={name1} />
+                  <input type="hidden" name="name2" value={name2} />
+                  <input type="hidden" name="name3" value={name3} />
+                  <button
+                    type="submit"
+                    className="rounded-full bg-[#E8A24A] px-5 py-2 font-medium text-[#0B1020]"
+                  >
+                    Continue to payment
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
