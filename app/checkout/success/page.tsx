@@ -1,7 +1,15 @@
 import Link from "next/link";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase-server";
+import { sendMail } from "@/lib/send-mail";
 import SavePlace from "@/app/save-place";
+
+const KIND_WORDS: Record<string, string> = {
+  cname_diy: "Choice 2 — you add the CNAME",
+  cname_setup: "Choice 2 — we add the CNAME",
+  domain_first: "Choice 3 — first course, we acquire the domain",
+  domain_extra: "Choice 3 — extra course on that domain",
+};
 
 export default async function CheckoutSuccessPage({
   searchParams,
@@ -36,20 +44,79 @@ export default async function CheckoutSuccessPage({
 
   const isDomain = session.metadata?.kind === "domain";
   const courseId = session.metadata?.courseId || "";
+  const domainKind = session.metadata?.domainKind || "";
+  const host = session.metadata?.host || "";
+  const name1 = session.metadata?.name1 || "";
+  const name2 = session.metadata?.name2 || "";
+  const name3 = session.metadata?.name3 || "";
+  const amount = (session.amount_total || 0) / 100;
+  const kindLine = KIND_WORDS[domainKind] || domainKind;
+  const namesLine = [name1, name2, name3].filter(Boolean).join(", ");
 
   if (user && session.payment_status === "paid" && isDomain) {
-    await supabase.from("domain_orders").insert({
-      teacher_id: user.id,
-      course_id: courseId || null,
-      kind: session.metadata?.domainKind || "",
-      host: session.metadata?.host || null,
-      name1: session.metadata?.name1 || null,
-      name2: session.metadata?.name2 || null,
-      name3: session.metadata?.name3 || null,
-      amount: (session.amount_total || 0) / 100,
-      stripe_session_id: session_id,
-      status: "paid",
-    });
+    const { data: already } = await supabase
+      .from("domain_orders")
+      .select("id")
+      .eq("stripe_session_id", session_id)
+      .maybeSingle();
+
+    if (!already) {
+      await supabase.from("domain_orders").insert({
+        teacher_id: user.id,
+        course_id: courseId || null,
+        kind: domainKind,
+        host: host || null,
+        name1: name1 || null,
+        name2: name2 || null,
+        name3: name3 || null,
+        amount,
+        stripe_session_id: session_id,
+        status: "paid",
+      });
+
+      const teacherNote = [
+        "Thank you for your payment.",
+        "",
+        "We are working on this and will respond within 48 hours.",
+        "Thank you for your patronage and patience.",
+        "",
+        kindLine,
+        host ? `Address: ${host}` : "",
+        namesLine ? `Names: ${namesLine}` : "",
+        `Amount: $${amount.toFixed(2)}`,
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      if (user.email) {
+        await sendMail({
+          to: user.email,
+          subject: "We have your Web App address request",
+          text: teacherNote,
+        });
+      }
+
+      const ownerTo = process.env.OWNER_EMAIL?.trim();
+      if (ownerTo) {
+        await sendMail({
+          to: ownerTo,
+          subject: `Domain order — ${kindLine}`,
+          text: [
+            "A teacher paid for a domain / address request.",
+            "",
+            `Teacher: ${user.email || user.id}`,
+            kindLine,
+            host ? `CNAME: ${host}` : "",
+            namesLine ? `Names: ${namesLine}` : "",
+            `Amount: $${amount.toFixed(2)}`,
+            "",
+            "Open Owner home → Domain orders.",
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        });
+      }
+    }
   }
 
   if (user && courseId && session.payment_status === "paid" && !isDomain) {
@@ -70,7 +137,7 @@ export default async function CheckoutSuccessPage({
         course_id: courseId,
         teacher_id: course.teacher_id,
         user_id: user.id,
-        amount: (session.amount_total || 0) / 100,
+        amount,
         stripe_session_id: session_id,
       });
     }
@@ -88,8 +155,9 @@ export default async function CheckoutSuccessPage({
             We have your request
           </h1>
           <p className="mt-4 text-sm leading-6 text-[#9AA3B5]">
-            TruKnowledge will reply within 48 hours about this domain.
-            You can close this page.
+            We are working on this and will respond within 48 hours. Thank you
+            for your patronage and patience. A copy is also on its way to your
+            email.
           </p>
           <Link
             href={returnTo}
