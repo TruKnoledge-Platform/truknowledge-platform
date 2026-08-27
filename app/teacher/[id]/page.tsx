@@ -51,6 +51,7 @@ export default function EditCoursePage() {
   const [isPublished, setIsPublished] = useState(false);
   const [discussionsEnabled, setDiscussionsEnabled] = useState(false);
   const [webAppUrl, setWebAppUrl] = useState("");
+  const [customHost, setCustomHost] = useState("");
   const [copied, setCopied] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
@@ -152,7 +153,7 @@ export default function EditCoursePage() {
       const { data, error } = await supabase
         .from("courses")
         .select(
-          "title, description, template, is_published, thumbnail_url, icon_url, price, preview_video_url, discussions_enabled, webapp_slug"
+          "title, description, template, is_published, thumbnail_url, icon_url, price, preview_video_url, discussions_enabled, webapp_slug, custom_host"
         )
         .eq("id", id)
         .single();
@@ -172,6 +173,7 @@ export default function EditCoursePage() {
       setTemplate(data.template || "classic_linear");
       setIsPublished(Boolean(data.is_published));
       setDiscussionsEnabled(Boolean(data.discussions_enabled));
+      setCustomHost(data.custom_host || "");
       if (data.webapp_slug) {
         setWebAppUrl(`https://${data.webapp_slug}.truknowledge.center`);
       } else {
@@ -415,8 +417,9 @@ export default function EditCoursePage() {
   }
 
   async function copyWebAppLink() {
-    if (!webAppUrl) return;
-    await navigator.clipboard.writeText(webAppUrl);
+    const url = customHost ? `https://${customHost}` : webAppUrl;
+    if (!url) return;
+    await navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   }
@@ -500,7 +503,20 @@ export default function EditCoursePage() {
             Share this link. Learners log in, enroll, and use the course as a
             standalone Web App. Edits you make here stay in sync.
           </p>
-          <p className="mt-3 break-all rounded-lg bg-[#0B1220] px-3 py-2 text-sm text-orange-300">
+          {customHost && (
+            <>
+              <p className="mt-3 text-xs uppercase tracking-wide text-slate-500">
+                Custom address
+              </p>
+              <p className="mt-1 break-all rounded-lg bg-[#0B1220] px-3 py-2 text-sm text-orange-300">
+                https://{customHost}
+              </p>
+            </>
+          )}
+          <p className="mt-3 text-xs uppercase tracking-wide text-slate-500">
+            TruKnowledge address
+          </p>
+          <p className="mt-1 break-all rounded-lg bg-[#0B1220] px-3 py-2 text-sm text-orange-300">
             {webAppUrl}
           </p>
           <a
