@@ -703,6 +703,22 @@ export default function EditCoursePage() {
             Click a session name to rename it. Session notes save when you click outside the box.
           </p>
 
+          <form onSubmit={handleAddSession} className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <input
+              value={newSessionTitle}
+              onChange={(e) => setNewSessionTitle(e.target.value)}
+              placeholder="Write New Session Title Here"
+              className="flex-1 rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
+            />
+            <button
+              type="submit"
+              disabled={adding}
+              className="rounded-lg bg-orange-500 px-4 py-2 font-medium hover:bg-orange-600 disabled:opacity-60"
+            >
+              {adding ? "Adding..." : "Add session"}
+            </button>
+          </form>
+
           <div className="mt-4 space-y-4">
             {sessions.length === 0 && <p className="text-slate-400">No sessions yet.</p>}
             {sessions.map((session, index) => {
@@ -848,22 +864,6 @@ export default function EditCoursePage() {
               );
             })}
           </div>
-
-          <form onSubmit={handleAddSession} className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <input
-              value={newSessionTitle}
-              onChange={(e) => setNewSessionTitle(e.target.value)}
-              placeholder="Write New Session Title Here"
-              className="flex-1 rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
-            />
-            <button
-              type="submit"
-              disabled={adding}
-              className="rounded-lg bg-orange-500 px-4 py-2 font-medium hover:bg-orange-600 disabled:opacity-60"
-            >
-              {adding ? "Adding..." : "Add session"}
-            </button>
-          </form>
         </section>
       </div>
     </main>
