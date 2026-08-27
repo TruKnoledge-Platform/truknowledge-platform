@@ -52,6 +52,8 @@ export default function EditCoursePage() {
   const [discussionsEnabled, setDiscussionsEnabled] = useState(false);
   const [webAppUrl, setWebAppUrl] = useState("");
   const [customHost, setCustomHost] = useState("");
+  const [boughtDomain, setBoughtDomain] = useState("");
+  const [webappSlug, setWebappSlug] = useState("");
   const [copied, setCopied] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
@@ -67,6 +69,14 @@ export default function EditCoursePage() {
   const [adding, setAdding] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  const boughtUrl = boughtDomain
+    ? webappSlug
+      ? `https://${boughtDomain}/${webappSlug}`
+      : `https://${boughtDomain}`
+    : "";
+  const customUrl = customHost ? `https://${customHost}` : "";
+  const shareUrl = customUrl || boughtUrl || webAppUrl;
 
   async function uploadFile(file: File, folder: string) {
     const safe = file.name.replace(/[^a-zA-Z0-9.\-]/g, "_");
@@ -153,7 +163,7 @@ export default function EditCoursePage() {
       const { data, error } = await supabase
         .from("courses")
         .select(
-          "title, description, template, is_published, thumbnail_url, icon_url, price, preview_video_url, discussions_enabled, webapp_slug, custom_host"
+          "title, description, template, is_published, thumbnail_url, icon_url, price, preview_video_url, discussions_enabled, webapp_slug, custom_host, teacher_id"
         )
         .eq("id", id)
         .single();
@@ -174,11 +184,22 @@ export default function EditCoursePage() {
       setIsPublished(Boolean(data.is_published));
       setDiscussionsEnabled(Boolean(data.discussions_enabled));
       setCustomHost(data.custom_host || "");
+      setWebappSlug(data.webapp_slug || "");
       if (data.webapp_slug) {
         setWebAppUrl(`https://${data.webapp_slug}.truknowledge.center`);
       } else {
         setWebAppUrl(`https://truknowledge.center/webapp/${id}`);
       }
+
+      if (data.teacher_id) {
+        const { data: teacher } = await supabase
+          .from("teacher_profiles")
+          .select("bought_domain")
+          .eq("user_id", data.teacher_id)
+          .maybeSingle();
+        setBoughtDomain(teacher?.bought_domain || "");
+      }
+
       const sessionRows = await loadSessions();
       await loadEnrollments(sessionRows);
       setLoading(false);
@@ -417,9 +438,8 @@ export default function EditCoursePage() {
   }
 
   async function copyWebAppLink() {
-    const url = customHost ? `https://${customHost}` : webAppUrl;
-    if (!url) return;
-    await navigator.clipboard.writeText(url);
+    if (!shareUrl) return;
+    await navigator.clipboard.writeText(shareUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   }
@@ -503,22 +523,36 @@ export default function EditCoursePage() {
             Share this link. Learners log in, enroll, and use the course as a
             standalone Web App. Edits you make here stay in sync.
           </p>
-          {customHost && (
+
+          {customUrl && (
             <>
               <p className="mt-3 text-xs uppercase tracking-wide text-slate-500">
                 Custom address
               </p>
               <p className="mt-1 break-all rounded-lg bg-[#0B1220] px-3 py-2 text-sm text-orange-300">
-                https://{customHost}
+                {customUrl}
               </p>
             </>
           )}
+
+          {boughtUrl && (
+            <>
+              <p className="mt-3 text-xs uppercase tracking-wide text-slate-500">
+                Your domain
+              </p>
+              <p className="mt-1 break-all rounded-lg bg-[#0B1220] px-3 py-2 text-sm text-orange-300">
+                {boughtUrl}
+              </p>
+            </>
+          )}
+
           <p className="mt-3 text-xs uppercase tracking-wide text-slate-500">
             TruKnowledge address
           </p>
           <p className="mt-1 break-all rounded-lg bg-[#0B1220] px-3 py-2 text-sm text-orange-300">
             {webAppUrl}
           </p>
+
           <a
             href={`/teacher/${id}/domain`}
             className="mt-3 mr-3 inline-block rounded-lg border border-orange-500 px-4 py-2 text-sm text-orange-400"
