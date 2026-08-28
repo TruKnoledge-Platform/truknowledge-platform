@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
+import DeleteCourseButton from "../delete-course-button";
 
 const templates = [
   { id: "classic_linear", name: "Classic Linear" },
@@ -38,7 +39,6 @@ type Enrollment = {
 
 export default function EditCoursePage() {
   const { id } = useParams<{ id: string }>();
-  const router = useRouter();
   const supabase = createClient();
 
   const [title, setTitle] = useState("");
@@ -55,6 +55,7 @@ export default function EditCoursePage() {
   const [boughtDomain, setBoughtDomain] = useState("");
   const [webappSlug, setWebappSlug] = useState("");
   const [copied, setCopied] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -211,6 +212,7 @@ export default function EditCoursePage() {
   async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
+    setSaved(false);
     setError("");
 
     const { error } = await supabase
@@ -235,8 +237,8 @@ export default function EditCoursePage() {
       return;
     }
 
-    router.push("/teacher");
-    router.refresh();
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   }
 
   async function handleThumbnail(file: File | undefined) {
@@ -460,10 +462,26 @@ export default function EditCoursePage() {
         </a>
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
-          <h1 className="text-3xl font-semibold">Edit course</h1>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex min-w-0 items-center gap-3">
+            {(iconUrl || thumbnail) && (
+              <img
+                src={iconUrl || thumbnail}
+                alt=""
+                className="h-12 w-12 shrink-0 rounded-xl border border-slate-700 object-cover"
+              />
+            )}
+            <div className="min-w-0">
+              <h1 className="text-3xl font-semibold">Manage course</h1>
+              <p className="mt-1 text-sm text-slate-400">
+                {title || "Untitled"} · {isPublished ? "Published" : "Draft"}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             <a
               href={`/courses/${id}`}
+              target="_blank"
+              rel="noreferrer"
               className="rounded-lg border border-slate-600 px-4 py-2 text-sm"
             >
               Preview
@@ -480,13 +498,12 @@ export default function EditCoursePage() {
             >
               {publishing ? "Updating..." : isPublished ? "Unpublish" : "Publish"}
             </button>
+            <DeleteCourseButton courseId={id} afterDelete="/teacher" />
           </div>
         </div>
 
-        <p className="mt-2 text-sm text-slate-400">
-          Status: {isPublished ? "Published" : "Draft"}
-        </p>
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
+        {saved && <p className="mt-4 text-sm text-orange-400">Saved.</p>}
         {uploading && <p className="mt-2 text-sm text-orange-400">Uploading...</p>}
 
         <details className="mt-6 rounded-2xl border border-slate-800 bg-[#111827] p-5">
@@ -553,19 +570,21 @@ export default function EditCoursePage() {
             {webAppUrl}
           </p>
 
-          <a
-            href={`/teacher/${id}/domain`}
-            className="mt-3 mr-3 inline-block rounded-lg border border-orange-500 px-4 py-2 text-sm text-orange-400"
-          >
-            Change address
-          </a>
-          <button
-            type="button"
-            onClick={copyWebAppLink}
-            className="mt-3 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium hover:bg-orange-600"
-          >
-            {copied ? "Copied" : "Copy Web App link"}
-          </button>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a
+              href={`/teacher/${id}/domain`}
+              className="inline-block rounded-lg border border-orange-500 px-4 py-2 text-sm text-orange-400"
+            >
+              Create Unique Domain
+            </a>
+            <button
+              type="button"
+              onClick={copyWebAppLink}
+              className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium hover:bg-orange-600"
+            >
+              {copied ? "Copied" : "Copy Web App link"}
+            </button>
+          </div>
         </section>
 
         <form onSubmit={handleSave} className="mt-8 space-y-6">

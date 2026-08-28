@@ -3,7 +3,13 @@
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 
-export default function DeleteCourseButton({ courseId }: { courseId: string }) {
+export default function DeleteCourseButton({
+  courseId,
+  afterDelete = "/teacher",
+}: {
+  courseId: string;
+  afterDelete?: string;
+}) {
   const router = useRouter();
   const supabase = createClient();
 
@@ -18,6 +24,7 @@ export default function DeleteCourseButton({ courseId }: { courseId: string }) {
       window.alert(error.message);
       return;
     }
+    router.push(afterDelete);
     router.refresh();
   }
 

@@ -27,20 +27,24 @@ export default async function CoursePage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { data: course } = await supabase
     .from("courses")
     .select(
-      "id, title, description, template, is_published, price, preview_video_url, discussions_enabled"
+      "id, title, description, template, is_published, owner_paused, price, preview_video_url, thumbnail_url, icon_url, discussions_enabled, teacher_id"
     )
     .eq("id", id)
-    .eq("is_published", true)
-	.eq("owner_paused", false)
-    .single();
+    .maybeSingle();
 
-  if (!course) {
-    notFound();
-  }
+  if (!course) notFound();
+
+  const isOwner = Boolean(user && user.id === course.teacher_id);
+  const hidden =
+    !course.is_published || Boolean(course.owner_paused);
+  if (hidden && !isOwner) notFound();
 
   const { data: sessions } = await supabase
     .from("sessions")
@@ -63,6 +67,8 @@ export default async function CoursePage({
       ? reviews.reduce((sum, item) => sum + item.rating, 0) / reviews.length
       : 0;
 
+  const picture = course.thumbnail_url || course.icon_url || "";
+
   return (
     <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
       <div className="mx-auto max-w-3xl">
@@ -70,8 +76,28 @@ export default async function CoursePage({
           Back to courses
         </a>
 
-        <p className="mt-6 text-sm text-orange-400">Published course</p>
-        <h1 className="mt-2 text-4xl font-semibold">{course.title}</h1>
+        {isOwner && hidden && (
+          <p className="mt-6 text-sm text-orange-400">
+            Draft preview — only you can see this until you publish.
+          </p>
+        )}
+
+        <div className="mt-6 flex items-start gap-4">
+          {course.icon_url && (
+            <img
+              src={course.icon_url}
+              alt=""
+              className="h-16 w-16 rounded-xl border border-slate-800 object-cover"
+            />
+          )}
+          <div>
+            <p className="text-sm text-orange-400">
+              {course.is_published ? "Published course" : "Draft course"}
+            </p>
+            <h1 className="mt-2 text-4xl font-semibold">{course.title}</h1>
+          </div>
+        </div>
+
         <p className="mt-4 text-slate-300">
           {course.description || "No description yet."}
         </p>
@@ -85,6 +111,14 @@ export default async function CoursePage({
             {average.toFixed(1)} / 5 · {reviews.length}{" "}
             {reviews.length === 1 ? "review" : "reviews"}
           </p>
+        )}
+
+        {picture && (
+          <img
+            src={picture}
+            alt=""
+            className="mt-6 w-full rounded-2xl border border-slate-800 object-cover"
+          />
         )}
 
         {sneakPeek && (
