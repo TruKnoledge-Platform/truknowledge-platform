@@ -4,6 +4,45 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
 import { saveCourseIcon, saveSiteIcon } from "./actions";
 
+const SIZE = 512;
+
+async function resizeToSquare(file: File): Promise<File> {
+  const bitmap = await createImageBitmap(file);
+  const canvas = document.createElement("canvas");
+  canvas.width = SIZE;
+  canvas.height = SIZE;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Could not read this image");
+
+  const side = Math.min(bitmap.width, bitmap.height);
+  const sx = (bitmap.width - side) / 2;
+  const sy = (bitmap.height - side) / 2;
+  ctx.drawImage(bitmap, sx, sy, side, side, 0, 0, SIZE, SIZE);
+  bitmap.close();
+
+  const png = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, "image/png")
+  );
+  if (!png) throw new Error("Could not resize this image");
+
+  let blob = png;
+  let name = "icon.png";
+  let type = "image/png";
+
+  if (png.size > 400_000) {
+    const jpg = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", 0.86)
+    );
+    if (jpg && jpg.size < png.size) {
+      blob = jpg;
+      name = "icon.jpg";
+      type = "image/jpeg";
+    }
+  }
+
+  return new File([blob], name, { type });
+}
+
 export default function IconUpload({
   kind,
   courseId,
@@ -22,14 +61,14 @@ export default function IconUpload({
     setBusy(true);
     setError("");
     try {
+      const resized = await resizeToSquare(file);
       const supabase = createClient();
-      const safe = file.name.replace(/[^a-zA-Z0-9.\-]/g, "_");
       const folder =
         kind === "site" ? "thumbnails/site" : `thumbnails/${courseId}`;
-      const path = `${folder}/${Date.now()}-icon-${safe}`;
+      const path = `${folder}/${Date.now()}-${resized.name}`;
       const { error: upErr } = await supabase.storage
         .from("course-files")
-        .upload(path, file);
+        .upload(path, resized, { contentType: resized.type, upsert: false });
       if (upErr) throw upErr;
       const { data } = supabase.storage.from("course-files").getPublicUrl(path);
       const fd = new FormData();
@@ -45,28 +84,34 @@ export default function IconUpload({
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <div className="h-16 w-16 overflow-hidden rounded-xl border border-white/10 bg-[#12182A]">
-        {url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={url} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full items-center justify-center text-xs text-[#9AA3B5]">
-            none
-          </div>
-        )}
+    <div>
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="h-16 w-16 overflow-hidden rounded-xl border border-white/10 bg-[#12182A]">
+          {url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={url} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full items-center justify-center text-xs text-[#9AA3B5]">
+              none
+            </div>
+          )}
+        </div>
+        <label className="cursor-pointer rounded-full bg-[#E8A24A] px-4 py-2 text-sm font-medium text-[#0B1020]">
+          {busy ? "Resizing…" : "Choose icon"}
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="hidden"
+            disabled={busy}
+            onChange={(e) => onFile(e.target.files?.[0])}
+          />
+        </label>
+        {error && <p className="text-sm text-red-400">{error}</p>}
       </div>
-      <label className="cursor-pointer rounded-full bg-[#E8A24A] px-4 py-2 text-sm font-medium text-[#0B1020]">
-        {busy ? "Uploading…" : "Choose icon"}
-        <input
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="hidden"
-          disabled={busy}
-          onChange={(e) => onFile(e.target.files?.[0])}
-        />
-      </label>
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      <p className="mt-2 text-xs text-[#9AA3B5]">
+        Any photo is fine. We crop the center to a square and resize to 512×512
+        for the browser tab and phone home screen.
+      </p>
     </div>
   );
 }
