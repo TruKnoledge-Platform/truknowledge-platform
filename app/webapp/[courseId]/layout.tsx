@@ -25,6 +25,8 @@ export async function generateMetadata({
 
   return {
     title,
+    applicationName: title,
+    manifest: `/webapp/${courseId}/manifest`,
     appleWebApp: {
       capable: true,
       title,
@@ -33,6 +35,7 @@ export async function generateMetadata({
     icons: {
       icon,
       apple: icon,
+      shortcut: icon,
     },
   };
 }
