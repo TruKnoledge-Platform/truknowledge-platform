@@ -1,6 +1,8 @@
 import { ImageResponse } from "next/og";
 import { createClient } from "@supabase/supabase-js";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 export const size = { width: 32, height: 32 };
 export const contentType = "image/png";
 
@@ -20,14 +22,31 @@ export default async function Icon() {
   }
 
   if (iconUrl) {
-    const res = await fetch(iconUrl);
+    const res = await fetch(iconUrl, { cache: "no-store" });
     if (res.ok) {
-      return new Response(await res.arrayBuffer(), {
-        headers: {
-          "Content-Type": res.headers.get("content-type") || "image/png",
-          "Cache-Control": "public, max-age=3600",
-        },
-      });
+      const buf = Buffer.from(await res.arrayBuffer());
+      const mime = res.headers.get("content-type") || "image/png";
+      const src = `data:${mime};base64,${buf.toString("base64")}`;
+      return new ImageResponse(
+        (
+          <div
+            style={{
+              display: "flex",
+              width: "100%",
+              height: "100%",
+              background: "#0B1020",
+            }}
+          >
+            <img
+              src={src}
+              width={32}
+              height={32}
+              style={{ objectFit: "cover" }}
+            />
+          </div>
+        ),
+        { ...size }
+      );
     }
   }
 
