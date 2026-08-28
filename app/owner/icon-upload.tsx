@@ -20,27 +20,11 @@ async function resizeToSquare(file: File): Promise<File> {
   ctx.drawImage(bitmap, sx, sy, side, side, 0, 0, SIZE, SIZE);
   bitmap.close();
 
-  const png = await new Promise<Blob | null>((resolve) =>
+  const blob = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob(resolve, "image/png")
   );
-  if (!png) throw new Error("Could not resize this image");
-
-  let blob = png;
-  let name = "icon.png";
-  let type = "image/png";
-
-  if (png.size > 400_000) {
-    const jpg = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", 0.86)
-    );
-    if (jpg && jpg.size < png.size) {
-      blob = jpg;
-      name = "icon.jpg";
-      type = "image/jpeg";
-    }
-  }
-
-  return new File([blob], name, { type });
+  if (!blob) throw new Error("Could not resize this image");
+  return new File([blob], "icon.png", { type: "image/png" });
 }
 
 export default function IconUpload({
@@ -63,16 +47,22 @@ export default function IconUpload({
     try {
       const resized = await resizeToSquare(file);
       const supabase = createClient();
-      const folder =
-        kind === "site" ? "thumbnails/site" : `thumbnails/${courseId}`;
-      const path = `${folder}/${Date.now()}-${resized.name}`;
+      const stable =
+        kind === "site"
+          ? "thumbnails/site/current.png"
+          : `thumbnails/${courseId}/current-icon.png`;
+
       const { error: upErr } = await supabase.storage
         .from("course-files")
-        .upload(path, resized, { contentType: resized.type, upsert: false });
+        .upload(stable, resized, {
+          contentType: "image/png",
+          upsert: true,
+        });
       if (upErr) throw upErr;
-      const { data } = supabase.storage.from("course-files").getPublicUrl(path);
+
+      const { data } = supabase.storage.from("course-files").getPublicUrl(stable);
       const fd = new FormData();
-      fd.set("url", data.publicUrl);
+      fd.set("url", `${data.publicUrl}?v=${Date.now()}`);
       if (courseId) fd.set("courseId", courseId);
       if (kind === "site") await saveSiteIcon(fd);
       else await saveCourseIcon(fd);
