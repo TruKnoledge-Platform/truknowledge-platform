@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Figtree, Fraunces } from "next/font/google";
-import { createClient } from "@supabase/supabase-js";
 import "./globals.css";
 
 const figtree = Figtree({
@@ -13,35 +12,22 @@ const fraunces = Fraunces({
   variable: "--font-display",
 });
 
-async function siteIcon() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return "/favicon.ico";
-  const supabase = createClient(url, key);
-  const { data } = await supabase
-    .from("platform_settings")
-    .select("site_icon_url")
-    .eq("id", 1)
-    .maybeSingle();
-  return data?.site_icon_url || "/favicon.ico";
-}
-
-export async function generateMetadata(): Promise<Metadata> {
-  const icon = await siteIcon();
-  return {
+export const metadata: Metadata = {
+  title: "TruKnowledge",
+  description: "Connecting real hearts, minds and souls. Courses and Web Apps.",
+  applicationName: "TruKnowledge",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
     title: "TruKnowledge",
-    description: "Connecting real hearts, minds and souls. Courses and Web Apps.",
-    appleWebApp: {
-      capable: true,
-      title: "TruKnowledge",
-      statusBarStyle: "black-translucent",
-    },
-    icons: {
-      icon,
-      apple: icon,
-    },
-  };
-}
+    statusBarStyle: "black-translucent",
+  },
+  icons: {
+    icon: [{ url: "/icon", type: "image/png" }],
+    apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }],
+    shortcut: "/icon",
+  },
+};
 
 export const viewport: Viewport = {
   themeColor: "#0B1020",
