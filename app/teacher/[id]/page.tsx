@@ -478,8 +478,8 @@ export default function EditCoursePage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <a
-              href={`/courses/${id}`}
+          <a
+              href={`/webapp/${id}`}
               target="_blank"
               rel="noreferrer"
               className="rounded-lg border border-slate-600 px-4 py-2 text-sm"
