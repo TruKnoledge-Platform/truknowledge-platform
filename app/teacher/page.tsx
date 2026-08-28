@@ -14,7 +14,7 @@ export default async function TeacherPage() {
 
   const { data: courses } = await supabase
     .from("courses")
-    .select("id, title, template, is_published, created_at")
+    .select("id, title, template, is_published, created_at, icon_url, thumbnail_url")
     .eq("teacher_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -121,18 +121,30 @@ export default async function TeacherPage() {
           <div className="grid gap-4">
             {list.map((course) => {
               const stat = stats.find((item) => item.id === course.id);
+              const picture = course.icon_url || course.thumbnail_url;
               return (
                 <div
                   key={course.id}
                   className="rounded-2xl border border-slate-800 bg-[#111827] p-6"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-4">
-                    <div>
-                      <h3 className="text-lg font-medium">{course.title}</h3>
-                      <p className="mt-1 text-sm text-slate-400">
-                        {course.is_published ? "Published" : "Draft"} ·{" "}
-                        {stat?.enrollments || 0} enrolled
-                      </p>
+                    <div className="flex min-w-0 items-center gap-4">
+                      {picture ? (
+                        <img
+                          src={picture}
+                          alt=""
+                          className="h-14 w-14 shrink-0 rounded-xl border border-slate-700 object-cover"
+                        />
+                      ) : (
+                        <div className="h-14 w-14 shrink-0 rounded-xl border border-slate-700 bg-[#0B1220]" />
+                      )}
+                      <div className="min-w-0">
+                        <h3 className="text-lg font-medium">{course.title}</h3>
+                        <p className="mt-1 text-sm text-slate-400">
+                          {course.is_published ? "Published" : "Draft"} ·{" "}
+                          {stat?.enrollments || 0} enrolled
+                        </p>
+                      </div>
                     </div>
                     <a
                       href={`/teacher/${course.id}`}
