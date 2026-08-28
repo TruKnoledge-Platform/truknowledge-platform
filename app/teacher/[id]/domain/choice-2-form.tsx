@@ -53,7 +53,7 @@ export default function Choice2Form({
             value={host}
             onChange={(e) => setHost(e.target.value)}
             placeholder="app.yoursite.com"
-            className="mt-1 block w-full rounded-lg bg-[#0B1020] px-3 py-2"
+            className="mt-1 block w-full rounded-lg border border-slate-700 bg-[#0B1220] px-3 py-2"
           />
         </label>
         <div className="flex flex-wrap gap-3">
@@ -61,7 +61,7 @@ export default function Choice2Form({
             type="button"
             disabled={diyDisabled}
             onClick={() => ask("cname_diy")}
-            className="rounded-full bg-[#E8A24A] px-5 py-2 font-medium text-[#0B1020] disabled:opacity-40"
+            className="rounded-lg bg-orange-500 px-5 py-2 font-medium hover:bg-orange-600 disabled:opacity-40"
           >
             {diyLabel}
           </button>
@@ -69,7 +69,7 @@ export default function Choice2Form({
             type="button"
             disabled={setupDisabled}
             onClick={() => ask("cname_setup")}
-            className="rounded-full border border-[#E8A24A] px-5 py-2 text-[#E8A24A] disabled:opacity-40"
+            className="rounded-lg border border-orange-500 px-5 py-2 text-orange-400 disabled:opacity-40"
           >
             {setupLabel}
           </button>
@@ -78,16 +78,16 @@ export default function Choice2Form({
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-md rounded-2xl border border-[#E8A24A]/40 bg-[#12182A] p-6 text-[#F3E6D2]">
-            <p className="text-lg text-[#E8A24A]">Keep your homepage</p>
-            <p className="mt-3 text-sm leading-6">
+          <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-[#111827] p-6">
+            <p className="text-lg font-medium">Keep your homepage</p>
+            <p className="mt-3 text-sm leading-6 text-slate-300">
               Use a sub-address like{" "}
-              <span className="text-[#E8A24A]">app.yoursite.com</span> — not
+              <span className="text-orange-400">app.yoursite.com</span> — not
               yoursite.com and not www.yoursite.com. That keeps your homepage as
               it is.
             </p>
             {bad && (
-              <p className="mt-3 text-sm text-red-300">
+              <p className="mt-3 text-sm text-red-400">
                 Change the address to a sub-address first, then try again.
               </p>
             )}
@@ -95,7 +95,7 @@ export default function Choice2Form({
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-full border border-white/20 px-5 py-2"
+                className="rounded-lg border border-slate-600 px-5 py-2"
               >
                 Cancel
               </button>
@@ -106,7 +106,7 @@ export default function Choice2Form({
                   <input type="hidden" name="kind" value={kind} />
                   <button
                     type="submit"
-                    className="rounded-full bg-[#E8A24A] px-5 py-2 font-medium text-[#0B1020]"
+                    className="rounded-lg bg-orange-500 px-5 py-2 font-medium hover:bg-orange-600"
                   >
                     Continue to payment
                   </button>

@@ -48,7 +48,7 @@ export default function Choice3Form({
             value={name1}
             onChange={(e) => setName1(e.target.value)}
             required
-            className="mt-1 block w-full rounded-lg bg-[#0B1020] px-3 py-2"
+            className="mt-1 block w-full rounded-lg border border-slate-700 bg-[#0B1220] px-3 py-2"
           />
         </label>
         <label className="block text-sm">
@@ -57,7 +57,7 @@ export default function Choice3Form({
             value={name2}
             onChange={(e) => setName2(e.target.value)}
             required
-            className="mt-1 block w-full rounded-lg bg-[#0B1020] px-3 py-2"
+            className="mt-1 block w-full rounded-lg border border-slate-700 bg-[#0B1220] px-3 py-2"
           />
         </label>
         <label className="block text-sm">
@@ -66,7 +66,7 @@ export default function Choice3Form({
             value={name3}
             onChange={(e) => setName3(e.target.value)}
             required
-            className="mt-1 block w-full rounded-lg bg-[#0B1020] px-3 py-2"
+            className="mt-1 block w-full rounded-lg border border-slate-700 bg-[#0B1220] px-3 py-2"
           />
         </label>
         <div className="flex flex-wrap gap-3 pt-2">
@@ -75,7 +75,7 @@ export default function Choice3Form({
             name="kind"
             value="domain_first"
             disabled={firstDisabled}
-            className="rounded-full bg-[#E8A24A] px-5 py-2 font-medium text-[#0B1020] disabled:opacity-40"
+            className="rounded-lg bg-orange-500 px-5 py-2 font-medium hover:bg-orange-600 disabled:opacity-40"
           >
             {firstLabel}
           </button>
@@ -84,7 +84,7 @@ export default function Choice3Form({
             name="kind"
             value="domain_extra"
             disabled={extraDisabled}
-            className="rounded-full border border-[#E8A24A] px-5 py-2 text-[#E8A24A] disabled:opacity-40"
+            className="rounded-lg border border-orange-500 px-5 py-2 text-orange-400 disabled:opacity-40"
           >
             {extraLabel}
           </button>
@@ -93,27 +93,27 @@ export default function Choice3Form({
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-          <div className="w-full max-w-md rounded-2xl border border-[#E8A24A]/40 bg-[#12182A] p-6 text-[#F3E6D2]">
-            <p className="text-lg text-[#E8A24A]">
-              {kind === "domain_extra" ? "Extra course on your domain" : "We acquire a domain"}
+          <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-[#111827] p-6">
+            <p className="text-lg font-medium">
+              {kind === "domain_extra" ? "Extra course on your domain" : "We buy a domain"}
             </p>
             {kind === "domain_extra" && extraBlocked ? (
-              <p className="mt-3 text-sm leading-6 text-red-300">
+              <p className="mt-3 text-sm leading-6 text-red-400">
                 Save a free short name (Choice 1) first. Extra courses use that
                 as the folder: yourdomain.com/shortname
               </p>
             ) : kind === "domain_extra" ? (
-              <p className="mt-3 text-sm leading-6">
+              <p className="mt-3 text-sm leading-6 text-slate-300">
                 This course will open at{" "}
-                <span className="text-[#E8A24A]">
+                <span className="text-orange-400">
                   {bought || "yourdomain.com"}/{slug}
                 </span>
                 . This is the extra-course price, not a new domain.
               </p>
             ) : (
-              <p className="mt-3 text-sm leading-6">
-                We will try to acquire one of your three names. All of your
-                courses will live on that domain as folders
+              <p className="mt-3 text-sm leading-6 text-slate-300">
+                We will try to buy one of your three names. All of your courses
+                will live on that domain as folders
                 (yourdomain.com/shortname). We reply within 48 hours.
               </p>
             )}
@@ -121,7 +121,7 @@ export default function Choice3Form({
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="rounded-full border border-white/20 px-5 py-2"
+                className="rounded-lg border border-slate-600 px-5 py-2"
               >
                 Cancel
               </button>
@@ -134,7 +134,7 @@ export default function Choice3Form({
                   <input type="hidden" name="name3" value={name3} />
                   <button
                     type="submit"
-                    className="rounded-full bg-[#E8A24A] px-5 py-2 font-medium text-[#0B1020]"
+                    className="rounded-lg bg-orange-500 px-5 py-2 font-medium hover:bg-orange-600"
                   >
                     Continue to payment
                   </button>
