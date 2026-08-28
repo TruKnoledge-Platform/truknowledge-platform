@@ -53,7 +53,6 @@ export default function WebAppPage() {
   const [previewVideo, setPreviewVideo] = useState("");
   const [discussionsEnabled, setDiscussionsEnabled] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
-  const [ownerPaused, setOwnerPaused] = useState(false);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [currentId, setCurrentId] = useState("");
@@ -108,7 +107,7 @@ export default function WebAppPage() {
       const { data: course, error: courseError } = await supabase
         .from("courses")
         .select(
-          "id, title, description, price, icon_url, thumbnail_url, preview_video_url, discussions_enabled, is_published, owner_paused, teacher_id"
+          "id, title, description, price, icon_url, thumbnail_url, preview_video_url, discussions_enabled, is_published, teacher_id"
         )
         .eq("id", courseId)
         .maybeSingle();
@@ -129,9 +128,8 @@ export default function WebAppPage() {
       setPreviewVideo(course.preview_video_url || "");
       setDiscussionsEnabled(Boolean(course.discussions_enabled));
       setIsPublished(Boolean(course.is_published));
-      setOwnerPaused(Boolean(course.owner_paused));
 
-      if ((!course.is_published || course.owner_paused) && !owner) {
+      if (!course.is_published && !owner) {
         setMissing(true);
         setLoading(false);
         return;
@@ -234,7 +232,7 @@ export default function WebAppPage() {
           <p className="text-sm text-orange-400">TruKnowledge</p>
           <h1 className="mt-2 text-3xl font-semibold">This Web App is not available</h1>
           <p className="mt-3 text-slate-400">
-            It may be unpublished, paused, or the link is wrong.
+            The course is unpublished, or the link is wrong.
           </p>
           <a href="/" className="mt-6 inline-block text-orange-400">
             Back to TruKnowledge
@@ -269,7 +267,7 @@ export default function WebAppPage() {
             )}
             <div>
               {!isPublished && (
-                <p className="text-sm text-orange-400">Draft</p>
+                <p className="text-sm text-orange-400">Unpublished — only you can see this</p>
               )}
               <h1 className="text-4xl font-semibold">{title}</h1>
             </div>
@@ -308,13 +306,19 @@ export default function WebAppPage() {
 
           {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
 
-          <EnrollButton
-            courseId={courseId}
-            price={price}
-            next={`/webapp/${courseId}`}
-          />
+          {isPublished ? (
+            <EnrollButton
+              courseId={courseId}
+              price={price}
+              next={`/webapp/${courseId}`}
+            />
+          ) : (
+            <p className="mt-6 text-sm text-slate-400">
+              Publish this course to let learners enroll.
+            </p>
+          )}
 
-          {!userId && (
+          {!userId && isPublished && (
             <p className="mt-4 text-sm text-slate-400">
               Already have an account?{" "}
               <a
@@ -368,11 +372,8 @@ export default function WebAppPage() {
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
         {isOwner && !isPublished && (
           <p className="mt-4 text-sm text-orange-400">
-            Draft Web App — learners will not see this until you publish.
+            Unpublished — learners cannot open this Web App until you publish.
           </p>
-        )}
-        {ownerPaused && (
-          <p className="mt-4 text-sm text-red-400">This course is paused.</p>
         )}
 
         <div className="mt-6 flex items-center gap-3">
