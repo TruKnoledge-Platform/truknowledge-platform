@@ -42,7 +42,7 @@ export async function GET(
     png = await sharp(src).resize(px, px, { fit: "cover" }).png().toBuffer();
   }
 
-  return new Response(png, {
+  return new Response(new Uint8Array(png), {
     headers: {
       "Content-Type": "image/png",
       "Cache-Control": "public, max-age=3600",
