@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import EnrollButton from "@/app/courses/enroll-button";
 import CourseDiscussion from "@/app/courses/course-discussion";
@@ -38,8 +38,36 @@ function videoEmbed(url: string) {
   return url;
 }
 
+function safeFrom(value: string | null) {
+  if (value && value.startsWith("/site/") && !value.startsWith("//")) {
+    return value;
+  }
+  return "";
+}
+
 export default function WebAppPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
+          Loading...
+        </main>
+      }
+    >
+      <WebAppPlayer />
+    </Suspense>
+  );
+}
+
+function WebAppPlayer() {
   const { courseId } = useParams<{ courseId: string }>();
+  const searchParams = useSearchParams();
+  const from = safeFrom(searchParams.get("from"));
+  const playPath = from
+    ? `/webapp/${courseId}?from=${encodeURIComponent(from)}`
+    : `/webapp/${courseId}`;
+  const backHref = from || "/learn";
+  const backLabel = from ? "Back to courses" : "Back to my courses";
   const supabase = createClient();
 
   const [userId, setUserId] = useState("");
@@ -234,8 +262,8 @@ export default function WebAppPage() {
           <p className="mt-3 text-slate-400">
             The course is unpublished, or the link is wrong.
           </p>
-          <a href="/" className="mt-6 inline-block text-orange-400">
-            Back to TruKnowledge
+          <a href={from || "/"} className="mt-6 inline-block text-orange-400">
+            {from ? "Back to courses" : "Back to TruKnowledge"}
           </a>
         </div>
       </main>
@@ -247,7 +275,9 @@ export default function WebAppPage() {
       <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
         <div className="mx-auto max-w-3xl">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-orange-400">TruKnowledge Web App</p>
+            <a href={backHref} className="text-sm text-slate-400 hover:text-white">
+              {backLabel}
+            </a>
             <button
               type="button"
               onClick={shareCourse}
@@ -307,11 +337,7 @@ export default function WebAppPage() {
           {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
 
           {isPublished ? (
-            <EnrollButton
-              courseId={courseId}
-              price={price}
-              next={`/webapp/${courseId}`}
-            />
+            <EnrollButton courseId={courseId} price={price} next={playPath} />
           ) : (
             <p className="mt-6 text-sm text-slate-400">
               Publish this course to let learners enroll.
@@ -322,7 +348,7 @@ export default function WebAppPage() {
             <p className="mt-4 text-sm text-slate-400">
               Already have an account?{" "}
               <a
-                href={`/login?next=${encodeURIComponent(`/webapp/${courseId}`)}`}
+                href={`/login?next=${encodeURIComponent(playPath)}`}
                 className="text-orange-400 hover:underline"
               >
                 Log in
@@ -357,8 +383,8 @@ export default function WebAppPage() {
     <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
       <div className="mx-auto max-w-5xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <a href="/learn" className="text-sm text-slate-400 hover:text-white">
-            Back to my courses
+          <a href={backHref} className="text-sm text-slate-400 hover:text-white">
+            {backLabel}
           </a>
           <button
             type="button"

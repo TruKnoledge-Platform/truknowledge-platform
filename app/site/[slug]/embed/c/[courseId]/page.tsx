@@ -63,15 +63,13 @@ export default async function EmbedCoursePage({
     ? previewEmbed(course.preview_video_url)
     : "";
   const picture = course.thumbnail_url || course.icon_url || "";
-  const playNext = `/webapp/${course.id}`;
+  const catalog = `/site/${site.slug}/embed`;
+  const playNext = `/webapp/${course.id}?from=${catalog}`;
 
   return (
     <main className="min-h-screen bg-[#0B1020] text-[#F3E6D2] px-5 pb-12 pt-16 md:px-8 md:pt-20">
       <div className="mx-auto max-w-3xl">
-        <a
-          href={`/site/${site.slug}/embed`}
-          className="text-sm text-slate-400 hover:text-white"
-        >
+        <a href={catalog} className="text-sm text-slate-400 hover:text-white">
           Back to {site.display_name}
         </a>
 
