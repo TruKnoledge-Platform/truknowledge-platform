@@ -85,6 +85,12 @@ export default async function TeacherPage() {
               )}
             </a>
             <a
+              href="/teacher/site"
+              className="rounded-lg border border-orange-500 px-4 py-2 text-sm text-orange-400"
+            >
+              My site
+            </a>
+            <a
               href="/payouts"
               className="rounded-lg border border-orange-500 px-4 py-2 text-sm text-orange-400"
             >

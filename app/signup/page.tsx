@@ -17,9 +17,17 @@ export default function SignupPage() {
     setError("");
     setMessage("");
 
+    const next = new URLSearchParams(window.location.search).get("next") || "";
+    const origin = window.location.origin;
+    const emailRedirectTo =
+      next && next.startsWith("/")
+        ? `${origin}/login?next=${encodeURIComponent(next)}`
+        : `${origin}/login`;
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: { emailRedirectTo },
     });
 
     setLoading(false);
@@ -31,6 +39,15 @@ export default function SignupPage() {
 
     setMessage("Check your email to confirm your account.");
   }
+
+  const next =
+    typeof window === "undefined"
+      ? ""
+      : new URLSearchParams(window.location.search).get("next") || "";
+  const loginHref =
+    next && next.startsWith("/")
+      ? `/login?next=${encodeURIComponent(next)}`
+      : "/login";
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-[#0B1220] px-4">
@@ -75,7 +92,7 @@ export default function SignupPage() {
 
         <p className="mt-4 text-center text-sm text-slate-400">
           Already have an account?{" "}
-          <a href="/login" className="text-orange-400 hover:underline">
+          <a href={loginHref} className="text-orange-400 hover:underline">
             Log in
           </a>
         </p>
