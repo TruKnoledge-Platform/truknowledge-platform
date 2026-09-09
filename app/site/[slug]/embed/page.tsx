@@ -26,7 +26,7 @@ export default async function TeacherEmbed({
     .eq("owner_paused", false)
     .order("created_at", { ascending: false });
 
-  const next = `/site/${site.slug}`;
+  const next = `/site/${site.slug}/embed`;
 
   return (
     <main className="min-h-screen bg-[#0B1020] text-[#F3E6D2] px-5 pb-12 pt-16 md:px-8 md:pt-20">
@@ -65,8 +65,7 @@ export default async function TeacherEmbed({
           {(courses || []).map((course) => (
             <a
               key={course.id}
-              href={`/courses/${course.id}`}
-              target="_top"
+              href={`/site/${site.slug}/embed/c/${course.id}`}
               className="rounded-2xl border border-white/10 bg-[#12182A] p-4 hover:border-[#E8A24A]"
             >
               <p className="text-lg">{course.title}</p>
