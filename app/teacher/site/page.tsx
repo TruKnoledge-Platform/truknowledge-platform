@@ -49,34 +49,48 @@ export default async function TeacherSitePage({
         )}
         {q.error === "1" && (
           <p className="mt-4 text-sm text-red-400">
-            Name required. Address must be 3–32 letters, numbers, or hyphens.
+            Name is required. Address must be 3–32 characters: lowercase
+            letters, numbers, or hyphens only.
           </p>
         )}
 
-        <form action={saveTeacherSite} className="mt-8 space-y-4">
-          <label className="block text-sm">
-            Name learners see
+        <form action={saveTeacherSite} className="mt-8 space-y-8">
+          <label className="block">
+            <span className="text-sm font-medium">Name learners see</span>
+            <p className="mt-1 text-sm text-slate-400">
+              Your public name. Capitals and spaces are fine. This appears at
+              the top of your page and in the embed.
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Example: Neuro Func
+            </p>
             <input
               name="display_name"
               required
               defaultValue={site?.display_name || ""}
               placeholder="Neuro Func"
-              className="mt-1 w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
+              className="mt-2 w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
             />
           </label>
-          <label className="block text-sm">
-            Address (slug)
+
+          <label className="block">
+            <span className="text-sm font-medium">Your site address</span>
+            <p className="mt-1 text-sm text-slate-400">
+              The short name in the link. Use only lowercase letters, numbers,
+              and hyphens. No spaces. Do not write www, http, or .com.
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Example: neurofunc → becomes truknowledge.center/site/neurofunc
+            </p>
             <input
               name="slug"
               required
               defaultValue={site?.slug || ""}
               placeholder="neurofunc"
-              className="mt-1 w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
+              className="mt-2 w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-2"
             />
           </label>
-          <p className="text-xs text-slate-500">
-            Public page: truknowledge.center/site/your-address
-          </p>
+
           <button
             type="submit"
             className="rounded-lg bg-orange-500 px-4 py-2 font-medium hover:bg-orange-600"
