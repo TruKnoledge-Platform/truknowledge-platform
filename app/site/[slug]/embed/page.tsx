@@ -22,6 +22,8 @@ export default async function TeacherEmbed({
     data: { user },
   } = await supabase.auth.getUser();
 
+  const isOwner = Boolean(user && user.id === site.teacher_id);
+
   const { data: courses } = await supabase
     .from("courses")
     .select("id, title, description, thumbnail_url")
@@ -51,6 +53,15 @@ export default async function TeacherEmbed({
               <span className="text-slate-400">
                 Signed in as {user.email}
               </span>
+              {isOwner && (
+                <a
+                  href="/teacher"
+                  target="_top"
+                  className="text-[#E8A24A] hover:underline"
+                >
+                  Teacher office
+                </a>
+              )}
               <a
                 href={`/auth/signout?next=${encodeURIComponent(next)}`}
                 className="text-[#E8A24A] hover:underline"
