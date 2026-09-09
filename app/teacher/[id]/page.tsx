@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import DeleteCourseButton from "../delete-course-button";
+import ListingCheckboxes from "./listing-checkboxes";
 
 const templates = [
   { id: "classic_linear", name: "Classic Linear" },
@@ -505,6 +506,7 @@ export default function EditCoursePage() {
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
         {saved && <p className="mt-4 text-sm text-orange-400">Saved.</p>}
         {uploading && <p className="mt-2 text-sm text-orange-400">Uploading...</p>}
+	        <ListingCheckboxes courseId={id} />
 
         <details className="mt-6 rounded-2xl border border-slate-800 bg-[#111827] p-5">
           <summary className="cursor-pointer text-lg font-medium">

@@ -24,6 +24,7 @@ export default async function TeacherPublicSite({
     .eq("teacher_id", site.teacher_id)
     .eq("is_published", true)
     .eq("owner_paused", false)
+    .eq("show_on_site", true)
     .order("created_at", { ascending: false });
 
   const next = `/site/${site.slug}`;
@@ -40,9 +41,7 @@ export default async function TeacherPublicSite({
         >
           Courses
         </h1>
-        <p className="mt-2 text-sm text-slate-400">
-          From this teacher only.
-        </p>
+        <p className="mt-2 text-sm text-slate-400">From this teacher only.</p>
 
         <div className="mt-4 flex gap-4 text-sm">
           <a

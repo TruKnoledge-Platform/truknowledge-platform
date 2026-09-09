@@ -6,7 +6,8 @@ export default async function CoursesPage() {
     .from("courses")
     .select("id, title, description, template, thumbnail_url")
     .eq("is_published", true)
-	.eq("owner_paused", false)
+    .eq("owner_paused", false)
+    .eq("show_on_platform", true)
     .order("created_at", { ascending: false });
 
   return (

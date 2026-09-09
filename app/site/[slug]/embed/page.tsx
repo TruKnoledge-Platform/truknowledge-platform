@@ -30,6 +30,7 @@ export default async function TeacherEmbed({
     .eq("teacher_id", site.teacher_id)
     .eq("is_published", true)
     .eq("owner_paused", false)
+    .eq("show_on_site", true)
     .order("created_at", { ascending: false });
 
   const next = `/site/${site.slug}/embed`;

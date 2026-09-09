@@ -6,11 +6,12 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: courses } = await supabase
+    const { data: courses } = await supabase
     .from("courses")
     .select("id, title, thumbnail_url")
     .eq("is_published", true)
     .eq("owner_paused", false)
+    .eq("show_on_platform", true)
     .order("created_at", { ascending: false })
     .limit(3);
 
