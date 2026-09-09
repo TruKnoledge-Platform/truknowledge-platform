@@ -18,6 +18,10 @@ export default async function TeacherEmbed({
 
   if (!site) notFound();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { data: courses } = await supabase
     .from("courses")
     .select("id, title, description, thumbnail_url")
@@ -41,21 +45,35 @@ export default async function TeacherEmbed({
           Courses
         </h1>
 
-        <div className="mt-5 flex gap-4 text-sm">
-          <a
-            href={`/login?next=${encodeURIComponent(next)}`}
-            target="_top"
-            className="text-[#E8A24A] hover:underline"
-          >
-            Log in
-          </a>
-          <a
-            href={`/signup?next=${encodeURIComponent(next)}`}
-            target="_top"
-            className="text-[#E8A24A] hover:underline"
-          >
-            Sign up
-          </a>
+        <div className="mt-5 flex flex-wrap items-center gap-4 text-sm">
+          {user ? (
+            <>
+              <span className="text-slate-400">
+                Signed in as {user.email}
+              </span>
+              <a
+                href={`/auth/signout?next=${encodeURIComponent(next)}`}
+                className="text-[#E8A24A] hover:underline"
+              >
+                Sign out
+              </a>
+            </>
+          ) : (
+            <>
+              <a
+                href={`/login?next=${encodeURIComponent(next)}`}
+                className="text-[#E8A24A] hover:underline"
+              >
+                Log in
+              </a>
+              <a
+                href={`/signup?next=${encodeURIComponent(next)}`}
+                className="text-[#E8A24A] hover:underline"
+              >
+                Sign up
+              </a>
+            </>
+          )}
         </div>
 
         <div className="mt-8 grid gap-3">
