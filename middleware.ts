@@ -106,13 +106,32 @@ export async function middleware(request: NextRequest) {
     path.startsWith("/webapp") ||
     path.startsWith("/unlisted") ||
     path.startsWith("/payouts") ||
-    path.startsWith("/courses");
+    path.startsWith("/courses") ||
+    path.startsWith("/site");
 
   if (!isOwnHost && !reserved) {
+    const bare = host.replace(/^www\./, "");
+
+    const { data: site } = await supabase
+      .from("teacher_sites")
+      .select("slug")
+      .eq("custom_host", bare)
+      .maybeSingle();
+
+    if (site?.slug && (path === "/" || path === "")) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/site/${site.slug}`;
+      const rewrite = NextResponse.rewrite(url);
+      supabaseResponse.cookies.getAll().forEach((c) => {
+        rewrite.cookies.set(c.name, c.value);
+      });
+      return rewrite;
+    }
+
     const { data: teacher } = await supabase
       .from("teacher_profiles")
       .select("user_id")
-      .eq("bought_domain", host.replace(/^www\./, ""))
+      .eq("bought_domain", bare)
       .maybeSingle();
 
     if (teacher?.user_id) {
