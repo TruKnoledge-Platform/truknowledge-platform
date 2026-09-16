@@ -10,24 +10,28 @@ const templates = [
     name: "Classic Linear",
     desc: "Simple top-to-bottom sessions",
     info: "Best for a clear sequence: Session 1, then 2, then 3. Learners move straight through the course. Good for most first courses.",
+    image: "/layouts/classic-linear.jpg",
   },
   {
     id: "card_grid",
     name: "Card Grid",
     desc: "Visual cards for each session",
     info: "Sessions appear as a grid of cards. Better when each session can stand on its own, like topics or modules they can browse.",
+    image: "/layouts/card-grid.jpg",
   },
   {
     id: "modular_chapters",
     name: "Modular Chapters",
     desc: "Grouped chapters and sessions",
     info: "Sessions are grouped into chapters. Use this for longer courses with sections, like Week 1, Week 2, or Part A / Part B.",
+    image: "/layouts/modular-chapters.jpg",
   },
   {
     id: "focused_path",
     name: "Focused Path",
     desc: "One clear path at a time",
     info: "The learner sees one main step at a time, with less distraction. Good for coaching, challenges, or a guided transformation path.",
+    image: "/layouts/focused-path.jpg",
   },
 ];
 
@@ -151,7 +155,16 @@ export default function NewCoursePage() {
                   </div>
                   <div className="mt-1 text-sm text-slate-400">{item.desc}</div>
                   {infoOpen === item.id && (
-                    <p className="mt-3 text-sm leading-6 text-slate-300">{item.info}</p>
+                    <div className="mt-3">
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full rounded-lg border border-slate-700"
+                      />
+                      <p className="mt-3 text-sm leading-6 text-slate-300">
+                        {item.info}
+                      </p>
+                    </div>
                   )}
                 </button>
               ))}
