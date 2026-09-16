@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import DeleteCourseButton from "../delete-course-button";
 import ListingCheckboxes from "./listing-checkboxes";
+import WebAppQr from "./web-app-qr";
 
 const templates = [
   { id: "classic_linear", name: "Classic Linear" },
@@ -477,6 +478,7 @@ export default function EditCoursePage() {
                 {title || "Untitled"} · {isPublished ? "Published" : "Draft"}
               </p>
             </div>
+          <WebAppQr url={shareUrl} />
           </div>
           <div className="flex flex-wrap items-center gap-2">
           <a
