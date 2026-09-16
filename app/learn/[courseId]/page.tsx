@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import CourseDiscussion from "@/app/courses/course-discussion";
+import { getPalette } from "@/lib/palettes";
 
 type Session = {
   id: string;
@@ -41,6 +42,7 @@ export default function PlayCoursePage() {
   const router = useRouter();
   const supabase = createClient();
   const [title, setTitle] = useState("");
+  const [paletteId, setPaletteId] = useState("night");
   const [sessions, setSessions] = useState<Session[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [currentId, setCurrentId] = useState("");
@@ -50,6 +52,8 @@ export default function PlayCoursePage() {
   const [copied, setCopied] = useState(false);
   const [savingProgress, setSavingProgress] = useState(false);
   const [userId, setUserId] = useState("");
+
+  const theme = getPalette(paletteId);
 
   async function markProgress(sessionId: string, isComplete: boolean) {
     if (!userId || !sessionId) return;
@@ -113,7 +117,7 @@ export default function PlayCoursePage() {
 
       const { data: course, error: courseError } = await supabase
         .from("courses")
-        .select("title")
+        .select("title, palette")
         .eq("id", courseId)
         .single();
 
@@ -131,6 +135,7 @@ export default function PlayCoursePage() {
 
       const list = sessionRows || [];
       setTitle(course.title);
+      setPaletteId(course.palette || "night");
       setSessions(list);
       setCurrentId(list[0]?.id || "");
 
@@ -195,23 +200,24 @@ export default function PlayCoursePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
+      <main className="min-h-screen px-6 py-10" style={{ background: theme.bg, color: theme.text }}>
         Loading...
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
+    <main className="min-h-screen px-6 py-10" style={{ background: theme.bg, color: theme.text }}>
       <div className="mx-auto max-w-5xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <a href="/learn" className="text-sm text-slate-400 hover:text-white">
+          <a href="/learn" className="text-sm" style={{ color: theme.muted }}>
             Back to my courses
           </a>
           <button
             type="button"
             onClick={shareCourse}
-            className="rounded-lg border border-orange-500 px-4 py-2 text-sm text-orange-400"
+            className="rounded-lg border px-4 py-2 text-sm"
+            style={{ borderColor: theme.accent, color: theme.accent }}
           >
             {copied ? "Link copied" : "Share"}
           </button>
@@ -219,16 +225,19 @@ export default function PlayCoursePage() {
 
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
 
-        <p className="mt-6 text-sm text-orange-400">Now playing</p>
+        <p className="mt-6 text-sm" style={{ color: theme.accent }}>Now playing</p>
         <h1 className="mt-2 text-3xl font-semibold">{title}</h1>
-        <p className="mt-2 text-slate-400">
+        <p className="mt-2" style={{ color: theme.muted }}>
           {current ? current.title : "No sessions yet"}
         </p>
 
-        <div className="mt-6 aspect-video w-full overflow-hidden rounded-2xl border border-slate-800 bg-[#111827]">
+        <div
+          className="mt-6 aspect-video w-full overflow-hidden rounded-2xl border"
+          style={{ borderColor: theme.border, background: theme.panel }}
+        >
           {!url && (
             <div className="flex h-full items-center justify-center">
-              <p className="px-6 text-center text-slate-400">
+              <p className="px-6 text-center" style={{ color: theme.muted }}>
                 No video yet for this session.
               </p>
             </div>
@@ -252,25 +261,31 @@ export default function PlayCoursePage() {
         <CourseDiscussion courseId={courseId} />
 
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-slate-400">
+          <p className="text-sm" style={{ color: theme.muted }}>
             {isComplete ? "This session is complete" : "In this session"}
           </p>
           <button
             type="button"
             onClick={markComplete}
             disabled={savingProgress || isComplete || !currentId}
-            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium hover:bg-orange-600 disabled:opacity-60"
+            className="rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-60"
+            style={{ background: theme.accent, color: theme.bg }}
           >
             {isComplete ? "Completed" : savingProgress ? "Saving..." : "Mark complete"}
           </button>
         </div>
 
         <div className="mt-6">
-          <label className="mb-2 block text-sm text-slate-300">Course sessions</label>
+          <label className="mb-2 block text-sm">Course sessions</label>
           <select
             value={currentId}
             onChange={(e) => setCurrentId(e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-[#111827] px-3 py-3"
+            className="w-full rounded-lg border px-3 py-3"
+            style={{
+              borderColor: theme.border,
+              background: theme.panel,
+              color: theme.text,
+            }}
           >
             {sessions.map((session) => (
               <option key={session.id} value={session.id}>
@@ -282,10 +297,15 @@ export default function PlayCoursePage() {
         </div>
 
         <section className="mt-8 grid gap-4 md:grid-cols-2">
-          <div className="rounded-xl border border-slate-800 bg-[#111827] p-4">
+          <div
+            className="rounded-xl border p-4"
+            style={{ borderColor: theme.border, background: theme.panel }}
+          >
             <h2 className="mb-3 font-medium">Session materials</h2>
             {!sessionMaterials.length && (
-              <p className="text-sm text-slate-400">No materials for this session.</p>
+              <p className="text-sm" style={{ color: theme.muted }}>
+                No materials for this session.
+              </p>
             )}
             {sessionMaterials.map((item) => (
               <a
@@ -293,16 +313,20 @@ export default function PlayCoursePage() {
                 href={item.file_url || "#"}
                 target="_blank"
                 rel="noreferrer"
-                className="mb-2 block text-sm text-orange-400 hover:underline"
+                className="mb-2 block text-sm hover:underline"
+                style={{ color: theme.accent }}
               >
                 {item.title}
               </a>
             ))}
           </div>
-          <div className="rounded-xl border border-slate-800 bg-[#111827] p-4">
+          <div
+            className="rounded-xl border p-4"
+            style={{ borderColor: theme.border, background: theme.panel }}
+          >
             <h2 className="mb-3 font-medium">Extra / Advanced materials</h2>
             {!advancedMaterials.length && (
-              <p className="text-sm text-slate-400">None yet.</p>
+              <p className="text-sm" style={{ color: theme.muted }}>None yet.</p>
             )}
             {advancedMaterials.map((item) => (
               <a
@@ -310,7 +334,8 @@ export default function PlayCoursePage() {
                 href={item.file_url || "#"}
                 target="_blank"
                 rel="noreferrer"
-                className="mb-2 block text-sm text-orange-400 hover:underline"
+                className="mb-2 block text-sm hover:underline"
+                style={{ color: theme.accent }}
               >
                 {item.title}
               </a>

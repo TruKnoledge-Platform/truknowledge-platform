@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase-browser";
 import DeleteCourseButton from "../delete-course-button";
 import ListingCheckboxes from "./listing-checkboxes";
 import WebAppQr from "./web-app-qr";
+import { palettes, type PaletteId } from "@/lib/palettes";
 
 const templates = [
   { id: "classic_linear", name: "Classic Linear" },
@@ -50,6 +51,7 @@ export default function EditCoursePage() {
   const [previewVideo, setPreviewVideo] = useState("");
   const [price, setPrice] = useState("0");
   const [template, setTemplate] = useState("classic_linear");
+  const [palette, setPalette] = useState<PaletteId>("night");
   const [isPublished, setIsPublished] = useState(false);
   const [discussionsEnabled, setDiscussionsEnabled] = useState(false);
   const [webAppUrl, setWebAppUrl] = useState("");
@@ -166,7 +168,7 @@ export default function EditCoursePage() {
       const { data, error } = await supabase
         .from("courses")
         .select(
-          "title, description, template, is_published, thumbnail_url, icon_url, price, preview_video_url, discussions_enabled, webapp_slug, custom_host, teacher_id"
+          "title, description, template, palette, is_published, thumbnail_url, icon_url, price, preview_video_url, discussions_enabled, webapp_slug, custom_host, teacher_id"
         )
         .eq("id", id)
         .single();
@@ -184,6 +186,7 @@ export default function EditCoursePage() {
       setPreviewVideo(data.preview_video_url || "");
       setPrice(String(data.price ?? 0));
       setTemplate(data.template || "classic_linear");
+      setPalette((data.palette as PaletteId) || "night");
       setIsPublished(Boolean(data.is_published));
       setDiscussionsEnabled(Boolean(data.discussions_enabled));
       setCustomHost(data.custom_host || "");
@@ -226,6 +229,7 @@ export default function EditCoursePage() {
         icon_url: iconUrl,
         preview_video_url: previewVideo,
         template,
+        palette,
         price: Number(price) || 0,
         discussions_enabled: discussionsEnabled,
         updated_at: new Date().toISOString(),
@@ -478,10 +482,10 @@ export default function EditCoursePage() {
                 {title || "Untitled"} · {isPublished ? "Published" : "Draft"}
               </p>
             </div>
-          <WebAppQr url={shareUrl} />
+            <WebAppQr url={shareUrl} />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-          <a
+            <a
               href={`/webapp/${id}`}
               target="_blank"
               rel="noreferrer"
@@ -508,7 +512,7 @@ export default function EditCoursePage() {
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
         {saved && <p className="mt-4 text-sm text-orange-400">Saved.</p>}
         {uploading && <p className="mt-2 text-sm text-orange-400">Uploading...</p>}
-	        <ListingCheckboxes courseId={id} />
+        <ListingCheckboxes courseId={id} />
 
         <details className="mt-6 rounded-2xl border border-slate-800 bg-[#111827] p-5">
           <summary className="cursor-pointer text-lg font-medium">
@@ -700,6 +704,29 @@ export default function EditCoursePage() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <p className="mb-3 text-sm text-slate-300">Palette</p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {(Object.values(palettes) as (typeof palettes)[PaletteId][]).map((item) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  onClick={() => setPalette(item.id)}
+                  className={`rounded-xl border p-4 text-left ${
+                    palette === item.id ? "border-orange-500" : "border-slate-700"
+                  }`}
+                  style={{ background: item.bg, color: item.text }}
+                >
+                  <div className="font-medium">{item.name}</div>
+                  <div
+                    className="mt-3 h-3 w-16 rounded-full"
+                    style={{ background: item.accent }}
+                  />
+                </button>
+              ))}
+            </div>
           </div>
 
           <label className="flex items-center gap-2 text-sm text-slate-300">
