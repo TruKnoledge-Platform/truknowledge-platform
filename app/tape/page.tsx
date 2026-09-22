@@ -30,10 +30,10 @@ const RANGES = [
 
 const COLORS: Record<string, string> = {
   BTC: "#F7931A",
-  ETH: "#627EEA",
-  XRP: "#00AAE4",
-  ADA: "#3CC8FF",
-  CRO: "#00A0E8",
+  ETH: "#B794F6",
+  XRP: "#2DD4BF",
+  ADA: "#FB7185",
+  CRO: "#F5C518",
 };
 
 const HOUR = 60 * 60 * 1000;
@@ -158,11 +158,18 @@ export default function TapePage() {
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         <header className="mb-6 flex flex-col gap-4 border-b border-[#2a2e36] pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="font-mono text-xs uppercase tracking-[0.18em] text-[#9aa0ab]">Live market tape</p>
-            <h1 className="mt-2 font-serif text-3xl tracking-tight">One window per coin</h1>
+            <p className="font-mono text-xs uppercase tracking-[0.18em] text-[#9aa0ab]">Unlisted tape</p>
+            <h1 className="mt-2 font-serif text-3xl tracking-tight">The five-coin desk</h1>
             <p className="mt-2 max-w-prose text-sm leading-relaxed text-[#9aa0ab]">
-              Daily activity in text. Price (line) and volume (bars) on one chart. This page is not linked from the
-              TruKnowledge home.
+              Each name has its own color, its own window, and the last day's print. Price is the line; volume is the
+              bars.
+            </p>
+            <p className="mt-3 flex flex-wrap gap-3 font-mono text-xs">
+              <span style={{ color: "#F7931A" }}>BTC orange</span>
+              <span style={{ color: "#B794F6" }}>ETH violet</span>
+              <span style={{ color: "#2DD4BF" }}>XRP teal</span>
+              <span style={{ color: "#FB7185" }}>ADA rose</span>
+              <span style={{ color: "#F5C518" }}>CRO gold</span>
             </p>
           </div>
           <div className="rounded-lg border border-[#2a2e36] bg-[#14161a] px-4 py-3 text-sm">
@@ -189,9 +196,13 @@ export default function TapePage() {
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: color }} />
-                      <span className="font-mono text-xs tracking-[0.16em] text-[#9aa0ab]">{m.symbol}</span>
+                      <span className="font-mono text-xs tracking-[0.16em]" style={{ color }}>
+                        {m.symbol}
+                      </span>
                     </div>
-                    <h2 className="mt-1 font-serif text-2xl">{m.name}</h2>
+                    <h2 className="mt-1 font-serif text-2xl" style={{ color }}>
+                      {m.name}
+                    </h2>
                     <p className="mt-1 font-mono text-3xl tabular-nums">{usd(m.price)}</p>
                   </div>
                   <div className="text-right">
