@@ -16,39 +16,38 @@ export default function RefundsPage() {
         <p className="mt-3 text-sm text-[#9AA3B5]">Last updated 22 September 2026</p>
 
         <div className="mt-8 space-y-6 text-sm leading-7 text-[#F3E6D2]/90">
-          <h2 className="text-xl text-[#E8A24A]">Courses</h2>
+          <h2 className="text-xl text-[#E8A24A]">Course enrollments</h2>
           <p>
-            If you paid for a course and could not open it, contact us within 14
-            days and we will refund you or fix access.
+            A course payment is for access to that course. If you have not opened
+            a session, write to us through Contact us within 14 days of payment
+            and we will refund the enrollment. Once a session has been opened,
+            the payment is not refunded, unless the course page was clearly not
+            what was sold or we cannot give you access.
           </p>
           <p>
-            If you could open the course, the sale is final. Course material is
-            digital and can be watched as soon as you enroll. A teacher may
-            choose to refund you. That is the teacher’s choice, not a promise
-            from TruKnowledge.
+            Free courses have nothing to refund. A teacher does not issue the
+            refund. We do, through Stripe, back to the same card.
           </p>
-          <p>Free courses have nothing to refund.</p>
 
-          <h2 className="text-xl text-[#E8A24A]">Custom domains and Web App setup</h2>
+          <h2 className="text-xl text-[#E8A24A]">Custom domain and Web App names</h2>
           <p>
             A fee to connect a domain you already own can be refunded if we have
-            not started the work. Once we have bought a domain name for you, or
-            finished the connection, that fee is not refunded. Domain registries
-            do not return the name.
+            not started the connection. Once the name is connected, that fee is
+            not refunded.
           </p>
           <p>
-            If none of your three name choices can be bought, we will offer other
-            names or refund the “we buy the name” fee. We will not keep a fee for
-            a name we did not buy.
+            A fee for us to buy a domain name is not refunded after the name has
+            been purchased. Domain registries do not give that money back. If
+            none of your name choices can be bought, and you do not accept
+            another name, we refund the fee because we did not buy one.
           </p>
 
           <h2 className="text-xl text-[#E8A24A]">How to ask</h2>
           <p>
-            Use <a href="/contact" className="text-[#E8A24A] hover:underline">Contact us</a>.
-            Include the email on the account, the course name, and the date you
-            paid. Refunds, when granted, go back to the same card through Stripe.
-            Stripe’s own fee may not be returned to us; if we refund you in full,
-            you receive the course price back.
+            Use Contact us. Include the email on the account and the course or
+            domain you paid for. We aim to answer within 48 hours. A refund, when
+            approved, goes back through Stripe and can take several days to show
+            on the card.
           </p>
         </div>
       </article>
