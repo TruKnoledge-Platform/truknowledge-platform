@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type PointerEvent } from "react";
 
 type Point = { t: number; price: number; volumeUsd: number };
 type Market = {
@@ -60,7 +60,22 @@ function ints(n: number | null) {
   return Math.round(n).toLocaleString("en-US");
 }
 
+function fmtWhen(t: number, range: string) {
+  const d = new Date(t);
+  if (range === "1d") {
+    return d.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+  }
+  return d.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 function ComboChart({ history, color, range }: { history: Point[]; color: string; range: string }) {
+  const [hover, setHover] = useState<number | null>(null);
   const w = 720;
   const h = 220;
   const pad = { l: 8, r: 8, t: 10, b: 8 };
@@ -74,36 +89,87 @@ function ComboChart({ history, color, range }: { history: Point[]; color: string
   const vMax = Math.max(...vols, 1);
   const pSpan = pMax - pMin || 1;
   const barW = Math.max(1.5, innerW / history.length - 1);
+  const xAt = (i: number) => pad.l + (i / (history.length - 1)) * innerW;
+  const yAt = (price: number) => pad.t + (1 - (price - pMin) / pSpan) * innerH;
   const pricePath = history
-    .map((p, i) => {
-      const x = pad.l + (i / (history.length - 1)) * innerW;
-      const y = pad.t + (1 - (p.price - pMin) / pSpan) * innerH;
-      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-    })
+    .map((p, i) => `${i === 0 ? "M" : "L"}${xAt(i).toFixed(1)},${yAt(p.price).toFixed(1)}`)
     .join(" ");
 
+  function pointFromEvent(e: PointerEvent<SVGSVGElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (!rect.width) return;
+    const x = ((e.clientX - rect.left) / rect.width) * w;
+    const i = Math.round(((x - pad.l) / innerW) * (history.length - 1));
+    setHover(Math.max(0, Math.min(history.length - 1, i)));
+  }
+
+  const hp = hover != null ? history[hover] : null;
+  const hx = hover != null ? xAt(hover) : 0;
+  const hy = hp ? yAt(hp.price) : 0;
+  const leftPct = (hx / w) * 100;
+  const flip = leftPct > 62;
+
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="h-56 w-full" role="img" aria-label="Price and volume">
-      {history.map((p, i) => {
-        const x = pad.l + (i / (history.length - 1)) * innerW;
-        const bh = (p.volumeUsd / vMax) * innerH * 0.45;
-        return (
-          <rect
-            key={p.t}
-            x={x - barW / 2}
-            y={h - pad.b - bh}
-            width={barW}
-            height={bh}
-            fill={color}
-            opacity="0.28"
-          />
-        );
-      })}
-      <path d={pricePath} fill="none" stroke={color} strokeWidth="2.2" />
-      <text x={pad.l} y={12} fill="#9aa0ab" fontSize="10">
-        {range === "1d" ? "intraday" : range.toUpperCase()} · line price · bars volume
-      </text>
-    </svg>
+    <div className="relative" onPointerLeave={() => setHover(null)}>
+      <svg
+        viewBox={`0 0 ${w} ${h}`}
+        className="h-56 w-full cursor-crosshair touch-none"
+        role="img"
+        aria-label="Price and volume. Move the cursor to read a print."
+        onPointerMove={pointFromEvent}
+        onPointerDown={pointFromEvent}
+      >
+        {history.map((p, i) => {
+          const x = xAt(i);
+          const bh = (p.volumeUsd / vMax) * innerH * 0.45;
+          return (
+            <rect
+              key={p.t}
+              x={x - barW / 2}
+              y={h - pad.b - bh}
+              width={barW}
+              height={bh}
+              fill={color}
+              opacity={hover === i ? 0.55 : 0.28}
+            />
+          );
+        })}
+        <path d={pricePath} fill="none" stroke={color} strokeWidth="2.2" />
+        <text x={pad.l} y={12} fill="#9aa0ab" fontSize="10">
+          {range === "1d" ? "intraday" : range.toUpperCase()} · hover a print for price and volume
+        </text>
+        {hp ? (
+          <>
+            <line
+              x1={hx}
+              x2={hx}
+              y1={pad.t}
+              y2={h - pad.b}
+              stroke={color}
+              strokeWidth="1.2"
+              strokeDasharray="3 4"
+            />
+            <circle cx={hx} cy={hy} r="4.5" fill={color} stroke="#0b0c0e" strokeWidth="1.6" />
+          </>
+        ) : null}
+      </svg>
+      {hp ? (
+        <div
+          className="pointer-events-none absolute z-10 min-w-44 rounded-md border border-[#2a2e36] bg-[#0b0c0e] px-3 py-2.5 text-xs shadow-lg"
+          style={{
+            left: `${leftPct}%`,
+            top: 22,
+            transform: flip ? "translateX(calc(-100% - 8px))" : "translateX(10px)",
+          }}
+        >
+          <div className="font-mono text-[#9aa0ab]">{fmtWhen(hp.t, range)}</div>
+          <div className="mt-1.5 font-mono tabular-nums text-[#f2f3f5]">Price {usd(hp.price)}</div>
+          <div className="mt-0.5 font-mono tabular-nums" style={{ color }}>
+            Volume {usd(hp.volumeUsd, true)}
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -162,7 +228,7 @@ export default function TapePage() {
             <h1 className="mt-2 font-serif text-3xl tracking-tight">The five-coin desk</h1>
             <p className="mt-2 max-w-prose text-sm leading-relaxed text-[#9aa0ab]">
               Each name has its own color, its own window, and the last day's print. Price is the line; volume is the
-              bars.
+              bars. Hover a chart to read that print.
             </p>
             <p className="mt-3 flex flex-wrap gap-3 font-mono text-xs">
               <span style={{ color: "#F7931A" }}>BTC orange</span>
