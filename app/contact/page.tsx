@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase-server";
 import { sendSiteContact } from "./actions";
+import SiteFooter from "../site-footer";
 
 export default async function ContactPage({
   searchParams,
@@ -13,8 +14,8 @@ export default async function ContactPage({
   } = await supabase.auth.getUser();
 
   return (
-    <main className="min-h-screen bg-[#0B1020] text-[#F3E6D2] px-6 py-10">
-      <div className="mx-auto max-w-lg">
+    <main className="min-h-screen bg-[#0B1020] text-[#F3E6D2]">
+      <div className="mx-auto max-w-lg px-6 py-10">
         <a href="/" className="text-sm text-[#9AA3B5] hover:text-white">
           Back to home
         </a>
@@ -25,8 +26,8 @@ export default async function ContactPage({
           Contact us
         </h1>
         <p className="mt-3 text-sm leading-6 text-[#9AA3B5]">
-          Questions about courses, the Web App, or a domain name. We read these
-          in the owner back office.
+          Questions about courses, the Web App, a domain name, privacy, or a
+          refund. We read these in the owner back office.
         </p>
 
         {sent && (
@@ -75,6 +76,7 @@ export default async function ContactPage({
           </button>
         </form>
       </div>
+      <SiteFooter />
     </main>
   );
 }
