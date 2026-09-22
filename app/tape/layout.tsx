@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Five Tape",
+  title: "The five-coin desk",
   description: "Live prices and volumes for Bitcoin, Ethereum, XRP, Cardano, and Cronos.",
   robots: { index: false, follow: false },
 };
