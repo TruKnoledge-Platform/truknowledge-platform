@@ -118,7 +118,7 @@ export async function GET(req: NextRequest) {
         }
         let change7d = num(snap?.percent_change_7d);
         if (change7d == null && history[0]?.price && price) {
-          change7d = ((price - firstHistPrice(history[0])) / history[0].price) * 100;
+          change7d = ((price - history[0].price) / history[0].price) * 100;
         }
 
         return {
@@ -151,8 +151,4 @@ export async function GET(req: NextRequest) {
       error: err instanceof Error ? err.message : "Market data unavailable",
     });
   }
-}
-
-function firstHistPrice(p: { price: number }) {
-  return p.price;
 }
