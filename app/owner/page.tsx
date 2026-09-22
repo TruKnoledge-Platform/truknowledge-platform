@@ -129,7 +129,7 @@ export default async function OwnerHome() {
           </h2>
           <p className="mt-2 text-sm text-[#9AA3B5]">
             Choice 1 (name.truknowledge.center) stays free. Change these any
-            time. Stripe will use them when we turn on teacher checkout.
+            time. New domain checkouts use these numbers.
           </p>
           <form action={saveDomainPrices} className="mt-6 grid gap-4 sm:grid-cols-2">
             <label className="text-sm">
@@ -188,6 +188,11 @@ export default async function OwnerHome() {
         </section>
 
         <p className="mt-8">
+          <a href="/owner/visitors" className="text-[#E8A24A] hover:underline">
+            Visitors — course opens and where learners are →
+          </a>
+        </p>
+        <p className="mt-3">
           <a href="/owner/people" className="text-[#E8A24A] hover:underline">
             People — teachers and members →
           </a>
