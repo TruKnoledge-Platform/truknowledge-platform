@@ -28,7 +28,10 @@ export default async function PayoutsPage({
         <h1 className="mt-4 text-3xl font-semibold">Payouts</h1>
         <p className="mt-3 text-slate-400">
           You keep {keep}% of each paid enrollment. TruKnowledge keeps{" "}
-          {status.feePercent}%, and Stripe keeps its card fee.
+          {status.feePercent}%, and Stripe keeps its card fee. Monthly and Daily
+          add no extra TruKnowledge fee. Immediate costs $
+          {status.instantFee.toFixed(2)} each time the balance is sent, plus
+          Stripe’s own instant fee of about 1%.
         </p>
 
         {error && (
@@ -58,8 +61,11 @@ export default async function PayoutsPage({
             Stripe can receive payouts
             {status.payoutsEnabled ? "." : ". Payouts to the bank are still being confirmed."}
             {" "}
-            New sales send your share straight to Stripe. Opening this page also
-            sends your share of any earlier sales that stayed on TruKnowledge.
+            New sales send your share to Stripe. Monthly sends the bank payment
+            on the 1st. Daily sends it each day the money is available. Immediate
+            sends it in minutes and costs ${status.instantFee.toFixed(2)} each
+            time. Opening this page also sends your share of any earlier sales
+            that stayed on TruKnowledge.
           </p>
         )}
 
@@ -147,13 +153,11 @@ export default async function PayoutsPage({
               <span>
                 <span className="block font-medium">Immediate</span>
                 <span className="mt-1 block text-slate-400">
-                  Sends the available balance in minutes.
-                  {status.instantFee > 0
-                    ? ` Costs $${status.instantFee.toFixed(2)} each time.`
-                    : " No TruKnowledge fee right now."}{" "}
-                  Stripe also takes about 1%. A debit card must be on the Stripe
-                  account. Card payments still take about two days before they
-                  can be sent.
+                  Sends the available balance in minutes. Extra charge: $
+                  {status.instantFee.toFixed(2)} each time, kept by TruKnowledge,
+                  plus about 1% kept by Stripe. A debit card must be on the
+                  Stripe account. Card payments still take about two days before
+                  they can be sent.
                 </span>
               </span>
             </label>
