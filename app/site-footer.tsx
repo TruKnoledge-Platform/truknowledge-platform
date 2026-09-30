@@ -8,8 +8,8 @@ export default function SiteFooter() {
         TruKnowledge
       </p>
       <p className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
-        <a href="/terms" className="text-[#E8A24A] hover:underline">
-          Terms
+        <a href="/teachers" className="text-[#E8A24A] hover:underline">
+          For teachers
         </a>
         <a href="/privacy" className="text-[#E8A24A] hover:underline">
           Privacy

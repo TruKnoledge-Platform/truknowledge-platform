@@ -34,6 +34,9 @@ export default async function Home() {
             Tru<span className="text-[#E8A24A]">Knowledge</span>
           </a>
           <nav className="flex items-center gap-5 text-sm text-[#9AA3B5]">
+            <a href="/teachers" className="hover:text-[#F3E6D2]">
+              For teachers
+            </a>
             <a href="/courses" className="hover:text-[#F3E6D2]">
               Courses
             </a>
