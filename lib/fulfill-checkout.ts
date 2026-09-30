@@ -1,6 +1,6 @@
 import Stripe from "stripe";
 import { createAdmin } from "@/lib/supabase-admin";
-import { sendMail } from "@/lib/send-email";
+import { sendImmediatePayout } from "@/lib/teacher-payout";
 
 const KIND_WORDS: Record<string, string> = {
   cname_diy: "Choice 2 — you add the CNAME",
@@ -138,6 +138,19 @@ export async function fulfillCheckoutSession(session: Stripe.Checkout.Session) {
         stripe_session_id: sessionId,
         transferred: meta.paidOut === "destination",
       });
+
+      const { data: pref } = await supabase
+        .from("teacher_profiles")
+        .select("payout_schedule")
+        .eq("user_id", course.teacher_id)
+        .maybeSingle();
+      if (pref?.payout_schedule === "instant") {
+        try {
+          await sendImmediatePayout(course.teacher_id, true);
+        } catch {
+          return;
+        }
+      }
     }
   }
 }

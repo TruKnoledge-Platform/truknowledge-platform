@@ -1,5 +1,5 @@
 import { requireOwner } from "@/lib/is-owner";
-import { saveFee, saveDomainPrices } from "./actions";
+import { saveFee, saveInstantFee, saveDomainPrices } from "./actions";
 import IconUpload from "./icon-upload";
 
 export default async function OwnerHome() {
@@ -13,11 +13,12 @@ export default async function OwnerHome() {
     { count: enrollmentCount },
     { count: viewCount },
     { data: payments },
+    { data: instantRows },
   ] = await Promise.all([
     supabase
       .from("platform_settings")
       .select(
-        "fee_percent, price_cname_diy, price_cname_setup, price_domain_first, price_domain_extra, site_icon_url"
+        "fee_percent, instant_payout_fee, price_cname_diy, price_cname_setup, price_domain_first, price_domain_extra, site_icon_url"
       )
       .eq("id", 1)
       .maybeSingle(),
@@ -30,9 +31,15 @@ export default async function OwnerHome() {
     supabase.from("enrollments").select("id", { count: "exact", head: true }),
     supabase.from("course_views").select("id", { count: "exact", head: true }),
     supabase.from("payments").select("amount, teacher_id, created_at"),
+    supabase.from("instant_payouts").select("fee_amount"),
   ]);
 
   const fee = Number(settings?.fee_percent ?? 15);
+  const instantFee = Number(settings?.instant_payout_fee ?? 0);
+  const instantCollected = (instantRows || []).reduce(
+    (sum, row) => sum + Number(row.fee_amount || 0),
+    0
+  );
   const priceDiy = Number(settings?.price_cname_diy ?? 0);
   const priceSetup = Number(settings?.price_cname_setup ?? 0);
   const priceFirst = Number(settings?.price_domain_first ?? 0);
@@ -65,6 +72,7 @@ export default async function OwnerHome() {
           <Stat label="All courses" value={courseCount ?? 0} />
           <Stat label="Gross sales" value={`$${sales.toFixed(2)}`} />
           <Stat label={`Platform take (${fee}%)`} value={`$${platformTake.toFixed(2)}`} />
+          <Stat label="Immediate payout fees" value={`$${instantCollected.toFixed(2)}`} />
           <Stat
             label="Teachers keep"
             value={`$${(sales - platformTake).toFixed(2)}`}
@@ -108,6 +116,41 @@ export default async function OwnerHome() {
                 max={90}
                 step={1}
                 defaultValue={fee}
+                className="mt-1 block w-28 rounded-lg bg-[#12182A] px-3 py-2 text-[#F3E6D2]"
+              />
+            </label>
+            <button
+              type="submit"
+              className="rounded-full bg-[#E8A24A] px-5 py-2 font-medium text-[#0B1020]"
+            >
+              Save
+            </button>
+          </form>
+        </section>
+
+        <section className="mt-8 rounded-2xl border border-white/10 bg-[#12182A] p-6">
+          <h2
+            className="text-xl text-[#E8A24A]"
+            style={{ fontFamily: "var(--font-display), Georgia, serif" }}
+          >
+            Immediate payout
+          </h2>
+          <p className="mt-2 text-sm text-[#9AA3B5]">
+            Fixed dollar amount kept each time a teacher sends their balance
+            immediately. 2.00 means $2.00 every time, whatever the size of the
+            payout. Stripe also charges its own small instant fee. Set 0 to
+            charge nothing extra.
+          </p>
+          <form action={saveInstantFee} className="mt-4 flex flex-wrap items-end gap-3">
+            <label className="text-sm">
+              Dollars
+              <input
+                name="instant_payout_fee"
+                type="number"
+                min={0}
+                max={100}
+                step="0.01"
+                defaultValue={instantFee}
                 className="mt-1 block w-28 rounded-lg bg-[#12182A] px-3 py-2 text-[#F3E6D2]"
               />
             </label>

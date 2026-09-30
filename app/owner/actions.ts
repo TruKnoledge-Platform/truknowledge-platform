@@ -18,6 +18,22 @@ export async function saveFee(formData: FormData) {
   redirect("/owner");
 }
 
+export async function saveInstantFee(formData: FormData) {
+  const { supabase } = await requireOwner();
+  const fee = Number(formData.get("instant_payout_fee"));
+  if (Number.isNaN(fee) || fee < 0 || fee > 100) {
+    redirect("/owner");
+  }
+  await supabase
+    .from("platform_settings")
+    .update({
+      instant_payout_fee: Math.round(fee * 100) / 100,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", 1);
+  redirect("/owner");
+}
+
 export async function saveDomainPrices(formData: FormData) {
   const { supabase } = await requireOwner();
   const diy = Number(formData.get("price_cname_diy"));

@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
 import { refreshTeacher } from "@/lib/teacher-payout";
-import { savePayoutSchedule } from "./actions";
+import { savePayoutSchedule, payNow } from "./actions";
 
 export default async function PayoutsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; sent?: string; fee?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, sent, fee } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -63,6 +63,21 @@ export default async function PayoutsPage({
           </p>
         )}
 
+        {status.instantPaid > 0 && (
+          <p className="mt-4 text-sm text-orange-300">
+            Sent ${status.instantPaid.toFixed(2)} immediately.
+            {status.instantServiceFee > 0
+              ? ` Service fee $${status.instantServiceFee.toFixed(2)}.`
+              : ""}
+          </p>
+        )}
+
+        {sent && (
+          <p className="mt-4 text-sm text-orange-300">
+            Sent ${sent} immediately{fee && Number(fee) > 0 ? `. Service fee $${fee}.` : "."}
+          </p>
+        )}
+
         {status.sentCount > 0 && (
           <p className="mt-4 text-sm text-orange-300">
             Sent ${status.sentAmount.toFixed(2)} from {status.sentCount}{" "}
@@ -70,10 +85,15 @@ export default async function PayoutsPage({
           </p>
         )}
 
+        {status.note && (
+          <p className="mt-2 text-sm text-slate-400">{status.note}</p>
+        )}
+
         {status.waiting > 0 && (
           <p className="mt-2 text-sm text-slate-400">
             {status.waiting} {status.waiting === 1 ? "sale is" : "sales are"} still
-            waiting. {status.note || "Stripe may still be releasing the card payment. Open this page again later."}
+            waiting. Stripe may still be releasing the card payment. Open this page
+            again later.
           </p>
         )}
 
@@ -92,7 +112,7 @@ export default async function PayoutsPage({
                 type="radio"
                 name="schedule"
                 value="monthly"
-                defaultChecked={status.schedule !== "daily"}
+                defaultChecked={status.schedule === "monthly"}
               />
               <span>
                 <span className="block font-medium">Monthly</span>
@@ -117,6 +137,26 @@ export default async function PayoutsPage({
                 </span>
               </span>
             </label>
+            <label className="flex items-start gap-3 rounded-xl border border-slate-800 bg-[#111827] p-4 text-sm">
+              <input
+                type="radio"
+                name="schedule"
+                value="instant"
+                defaultChecked={status.schedule === "instant"}
+              />
+              <span>
+                <span className="block font-medium">Immediate</span>
+                <span className="mt-1 block text-slate-400">
+                  Sends the available balance in minutes.
+                  {status.instantFee > 0
+                    ? ` Costs $${status.instantFee.toFixed(2)} each time.`
+                    : " No TruKnowledge fee right now."}{" "}
+                  Stripe also takes about 1%. A debit card must be on the Stripe
+                  account. Card payments still take about two days before they
+                  can be sent.
+                </span>
+              </span>
+            </label>
             <button
               type="submit"
               className="rounded-lg border border-orange-500 px-4 py-2 text-sm text-orange-300"
@@ -124,6 +164,22 @@ export default async function PayoutsPage({
               Save payout choice
             </button>
           </form>
+        )}
+
+        {status.chargesEnabled && status.schedule === "instant" && (
+          <div className="mt-4 flex flex-wrap items-center gap-4">
+            <form action={payNow}>
+              <button
+                type="submit"
+                className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium"
+              >
+                Send available balance now
+              </button>
+            </form>
+            <a href="/api/stripe/express" className="text-sm text-orange-300 hover:underline">
+              Open Stripe to add a debit card
+            </a>
+          </div>
         )}
       </div>
     </main>
