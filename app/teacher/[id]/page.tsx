@@ -7,6 +7,7 @@ import DeleteCourseButton from "../delete-course-button";
 import ListingCheckboxes from "./listing-checkboxes";
 import WebAppQr from "./web-app-qr";
 import { palettes, type PaletteId } from "@/lib/palettes";
+import { fonts, type FontId } from "@/lib/fonts";
 
 const templates = [
   { id: "classic_linear", name: "Classic Linear" },
@@ -52,6 +53,7 @@ export default function EditCoursePage() {
   const [price, setPrice] = useState("0");
   const [template, setTemplate] = useState("classic_linear");
   const [palette, setPalette] = useState<PaletteId>("night");
+  const [font, setFont] = useState<FontId>("clean");
   const [isPublished, setIsPublished] = useState(false);
   const [discussionsEnabled, setDiscussionsEnabled] = useState(false);
   const [webAppUrl, setWebAppUrl] = useState("");
@@ -168,7 +170,7 @@ export default function EditCoursePage() {
       const { data, error } = await supabase
         .from("courses")
         .select(
-          "title, description, template, palette, is_published, thumbnail_url, icon_url, price, preview_video_url, discussions_enabled, webapp_slug, custom_host, teacher_id"
+          "title, description, template, palette, font, is_published, thumbnail_url, icon_url, price, preview_video_url, discussions_enabled, webapp_slug, custom_host, teacher_id"
         )
         .eq("id", id)
         .single();
@@ -187,6 +189,7 @@ export default function EditCoursePage() {
       setPrice(String(data.price ?? 0));
       setTemplate(data.template || "classic_linear");
       setPalette((data.palette as PaletteId) || "night");
+      setFont((data.font as FontId) || "clean");
       setIsPublished(Boolean(data.is_published));
       setDiscussionsEnabled(Boolean(data.discussions_enabled));
       setCustomHost(data.custom_host || "");
@@ -230,6 +233,7 @@ export default function EditCoursePage() {
         preview_video_url: previewVideo,
         template,
         palette,
+        font,
         price: Number(price) || 0,
         discussions_enabled: discussionsEnabled,
         updated_at: new Date().toISOString(),
@@ -724,6 +728,33 @@ export default function EditCoursePage() {
                     className="mt-3 h-3 w-16 rounded-full"
                     style={{ background: item.accent }}
                   />
+                </button>
+              ))}
+            </div>
+          </div>
+
+
+          <div>
+            <p className="mb-1 text-sm text-slate-300">Font</p>
+            <p className="mb-3 text-xs text-slate-500">
+              One font for the whole course. It is used with the color scheme on the player and the Web App.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {(Object.values(fonts) as (typeof fonts)[FontId][]).map((item) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  onClick={() => setFont(item.id)}
+                  className={`rounded-xl border bg-[#0B1220] px-4 py-3 text-left ${
+                    font === item.id ? "border-orange-500" : "border-slate-700"
+                  }`}
+                >
+                  <div className="text-lg" style={{ fontFamily: item.family }}>
+                    {item.name}
+                  </div>
+                  <div className="mt-1 text-sm text-slate-400" style={{ fontFamily: item.family }}>
+                    {item.sample}
+                  </div>
                 </button>
               ))}
             </div>

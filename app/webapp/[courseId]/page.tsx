@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase-browser";
 import EnrollButton from "@/app/courses/enroll-button";
 import CourseDiscussion from "@/app/courses/course-discussion";
 import { getPalette } from "@/lib/palettes";
+import { getFont } from "@/lib/fonts";
 
 type Session = {
   id: string;
@@ -83,6 +84,7 @@ function WebAppPlayer() {
   const [discussionsEnabled, setDiscussionsEnabled] = useState(false);
   const [isPublished, setIsPublished] = useState(false);
   const [paletteId, setPaletteId] = useState("night");
+  const [fontId, setFontId] = useState("clean");
   const [sessions, setSessions] = useState<Session[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [currentId, setCurrentId] = useState("");
@@ -94,6 +96,7 @@ function WebAppPlayer() {
   const [missing, setMissing] = useState(false);
 
   const theme = getPalette(paletteId);
+  const font = getFont(fontId);
 
   async function markProgress(sessionId: string, isComplete: boolean) {
     if (!userId || !sessionId) return;
@@ -139,7 +142,7 @@ function WebAppPlayer() {
       const { data: course, error: courseError } = await supabase
         .from("courses")
         .select(
-          "id, title, description, price, icon_url, thumbnail_url, preview_video_url, discussions_enabled, is_published, teacher_id, palette"
+          "id, title, description, price, icon_url, thumbnail_url, preview_video_url, discussions_enabled, is_published, teacher_id, palette, font"
         )
         .eq("id", courseId)
         .maybeSingle();
@@ -161,6 +164,7 @@ function WebAppPlayer() {
       setDiscussionsEnabled(Boolean(course.discussions_enabled));
       setIsPublished(Boolean(course.is_published));
       setPaletteId(course.palette || "night");
+      setFontId(course.font || "clean");
 
       if (!course.is_published && !owner) {
         setMissing(true);
@@ -252,7 +256,7 @@ function WebAppPlayer() {
 
   if (loading) {
     return (
-      <main className="min-h-screen px-6 py-10" style={{ background: theme.bg, color: theme.text }}>
+      <main className="min-h-screen px-6 py-10" style={{ background: theme.bg, color: theme.text, fontFamily: font.family }}>
         Loading...
       </main>
     );
@@ -260,7 +264,7 @@ function WebAppPlayer() {
 
   if (missing) {
     return (
-      <main className="min-h-screen px-6 py-10" style={{ background: theme.bg, color: theme.text }}>
+      <main className="min-h-screen px-6 py-10" style={{ background: theme.bg, color: theme.text, fontFamily: font.family }}>
         <div className="mx-auto max-w-xl">
           <p className="text-sm" style={{ color: theme.accent }}>TruKnowledge</p>
           <h1 className="mt-2 text-3xl font-semibold">This Web App is not available</h1>
@@ -277,7 +281,7 @@ function WebAppPlayer() {
 
   if (!canPlay) {
     return (
-      <main className="min-h-screen px-6 py-10" style={{ background: theme.bg, color: theme.text }}>
+      <main className="min-h-screen px-6 py-10" style={{ background: theme.bg, color: theme.text, fontFamily: font.family }}>
         <div className="mx-auto max-w-3xl">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <a href={backHref} className="text-sm" style={{ color: theme.muted }}>
@@ -395,7 +399,7 @@ function WebAppPlayer() {
   }
 
   return (
-    <main className="min-h-screen px-6 py-10" style={{ background: theme.bg, color: theme.text }}>
+    <main className="min-h-screen px-6 py-10" style={{ background: theme.bg, color: theme.text, fontFamily: font.family }}>
       <div className="mx-auto max-w-5xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <a href={backHref} className="text-sm" style={{ color: theme.muted }}>

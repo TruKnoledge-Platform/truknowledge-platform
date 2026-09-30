@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase-browser";
 import CourseDiscussion from "@/app/courses/course-discussion";
 import { getPalette } from "@/lib/palettes";
+import { getFont } from "@/lib/fonts";
 
 type Session = {
   id: string;
@@ -43,6 +44,7 @@ export default function PlayCoursePage() {
   const supabase = createClient();
   const [title, setTitle] = useState("");
   const [paletteId, setPaletteId] = useState("night");
+  const [fontId, setFontId] = useState("clean");
   const [sessions, setSessions] = useState<Session[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
   const [currentId, setCurrentId] = useState("");
@@ -54,6 +56,7 @@ export default function PlayCoursePage() {
   const [userId, setUserId] = useState("");
 
   const theme = getPalette(paletteId);
+  const font = getFont(fontId);
 
   async function markProgress(sessionId: string, isComplete: boolean) {
     if (!userId || !sessionId) return;
@@ -117,7 +120,7 @@ export default function PlayCoursePage() {
 
       const { data: course, error: courseError } = await supabase
         .from("courses")
-        .select("title, palette")
+        .select("title, palette, font")
         .eq("id", courseId)
         .single();
 
@@ -136,6 +139,7 @@ export default function PlayCoursePage() {
       const list = sessionRows || [];
       setTitle(course.title);
       setPaletteId(course.palette || "night");
+      setFontId(course.font || "clean");
       setSessions(list);
       setCurrentId(list[0]?.id || "");
 
@@ -200,14 +204,14 @@ export default function PlayCoursePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen px-6 py-10" style={{ background: theme.bg, color: theme.text }}>
+      <main className="min-h-screen px-6 py-10" style={{ background: theme.bg, color: theme.text, fontFamily: font.family }}>
         Loading...
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen px-6 py-10" style={{ background: theme.bg, color: theme.text }}>
+    <main className="min-h-screen px-6 py-10" style={{ background: theme.bg, color: theme.text, fontFamily: font.family }}>
       <div className="mx-auto max-w-5xl">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <a href="/learn" className="text-sm" style={{ color: theme.muted }}>
