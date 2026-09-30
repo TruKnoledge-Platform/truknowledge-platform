@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import { createAdmin } from "@/lib/supabase-admin";
+import { sendMail } from "@/lib/send-email";
 import { sendImmediatePayout } from "@/lib/teacher-payout";
 
 const KIND_WORDS: Record<string, string> = {
