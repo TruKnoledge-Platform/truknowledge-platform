@@ -1,45 +1,79 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase-server";
+import { refreshTeacher } from "@/lib/teacher-payout";
+import { savePayoutSchedule } from "./actions";
 
-export default async function PayoutsPage() {
+export default async function PayoutsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect("/login?next=/payouts");
-  }
+  if (!user) redirect("/login?next=/payouts");
 
-  const { data: teacher } = await supabase
-    .from("teacher_profiles")
-    .select("stripe_account_id, charges_enabled")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  const connected = Boolean(teacher?.stripe_account_id);
+  const status = await refreshTeacher(user.id);
+  const keep = 100 - status.feePercent;
 
   return (
-    <main className="min-h-screen bg-[#0B1220] text-white px-6 py-10">
+    <main className="min-h-screen bg-[#0B1220] px-6 py-10 text-white">
       <div className="mx-auto max-w-xl">
         <a href="/teacher" className="text-sm text-slate-400 hover:text-white">
           Back to teacher home
         </a>
         <h1 className="mt-4 text-3xl font-semibold">Payouts</h1>
         <p className="mt-3 text-slate-400">
-          Connect Stripe to receive your share of paid enrollments. TruKnowledge
-          keeps a 10% platform fee.
+          You keep {keep}% of each paid enrollment. TruKnowledge keeps{" "}
+          {status.feePercent}%, and Stripe keeps its card fee.
         </p>
 
-        {connected ? (
-          <p className="mt-6 rounded-xl border border-slate-800 bg-[#111827] p-4 text-sm text-slate-300">
-            {teacher?.charges_enabled
-              ? "Stripe is connected and can receive payouts."
-              : "Stripe is connected. Confirmation can still take a while."}
+        {error && (
+          <p className="mt-4 rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-300">
+            {error}
           </p>
-        ) : (
+        )}
+
+        {!status.connected && (
           <p className="mt-6 text-sm text-slate-400">
-            Not connected yet. Click the button below.
+            Not connected yet. Click the button below. Stripe will ask for the
+            bank account the money should go to.
+          </p>
+        )}
+
+        {status.connected && !status.chargesEnabled && (
+          <p className="mt-6 rounded-xl border border-slate-800 bg-[#111827] p-4 text-sm text-slate-300">
+            Stripe is connected, but it is still confirming the account. Sales
+            are saved. Your share is sent after Stripe says the account can
+            receive money. If Stripe asked for more information, use the button
+            below.
+          </p>
+        )}
+
+        {status.chargesEnabled && (
+          <p className="mt-6 rounded-xl border border-slate-800 bg-[#111827] p-4 text-sm text-slate-300">
+            Stripe can receive payouts
+            {status.payoutsEnabled ? "." : ". Payouts to the bank are still being confirmed."}
+            {" "}
+            New sales send your share straight to Stripe. Opening this page also
+            sends your share of any earlier sales that stayed on TruKnowledge.
+          </p>
+        )}
+
+        {status.sentCount > 0 && (
+          <p className="mt-4 text-sm text-orange-300">
+            Sent ${status.sentAmount.toFixed(2)} from {status.sentCount}{" "}
+            {status.sentCount === 1 ? "sale" : "sales"} to your Stripe account.
+          </p>
+        )}
+
+        {status.waiting > 0 && (
+          <p className="mt-2 text-sm text-slate-400">
+            {status.waiting} {status.waiting === 1 ? "sale is" : "sales are"} still
+            waiting. {status.note || "Stripe may still be releasing the card payment. Open this page again later."}
           </p>
         )}
 
@@ -47,8 +81,50 @@ export default async function PayoutsPage() {
           href="/api/stripe/connect"
           className="mt-6 inline-block rounded-lg bg-orange-500 px-5 py-3 font-medium hover:bg-orange-600"
         >
-          {connected ? "Continue Stripe setup" : "Connect Stripe"}
+          {status.connected ? "Continue Stripe setup" : "Connect Stripe"}
         </a>
+
+        {status.chargesEnabled && (
+          <form action={savePayoutSchedule} className="mt-8 space-y-3">
+            <p className="text-sm font-medium">When Stripe pays your bank</p>
+            <label className="flex items-start gap-3 rounded-xl border border-slate-800 bg-[#111827] p-4 text-sm">
+              <input
+                type="radio"
+                name="schedule"
+                value="monthly"
+                defaultChecked={status.schedule !== "daily"}
+              />
+              <span>
+                <span className="block font-medium">Monthly</span>
+                <span className="mt-1 block text-slate-400">
+                  Stripe sends the balance on the 1st. No extra fee.
+                </span>
+              </span>
+            </label>
+            <label className="flex items-start gap-3 rounded-xl border border-slate-800 bg-[#111827] p-4 text-sm">
+              <input
+                type="radio"
+                name="schedule"
+                value="daily"
+                defaultChecked={status.schedule === "daily"}
+              />
+              <span>
+                <span className="block font-medium">Daily</span>
+                <span className="mt-1 block text-slate-400">
+                  Stripe sends the balance each day it is available. Card
+                  payments still take about two days to clear. No extra
+                  TruKnowledge fee.
+                </span>
+              </span>
+            </label>
+            <button
+              type="submit"
+              className="rounded-lg border border-orange-500 px-4 py-2 text-sm text-orange-300"
+            >
+              Save payout choice
+            </button>
+          </form>
+        )}
       </div>
     </main>
   );

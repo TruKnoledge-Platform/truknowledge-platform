@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { createClient } from "@/lib/supabase-server";
+import { destinationForTeacher } from "@/lib/teacher-payout";
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,11 +37,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "This course is free" }, { status: 400 });
     }
 
-    const { data: teacherProfile } = await supabase
-      .from("teacher_profiles")
-      .select("stripe_account_id, charges_enabled")
-      .eq("user_id", course.teacher_id)
-      .maybeSingle();
+    const destination = course.teacher_id
+      ? await destinationForTeacher(course.teacher_id)
+      : null;
 
     const { data: settings } = await supabase
       .from("platform_settings")
@@ -55,11 +54,6 @@ export async function POST(req: NextRequest) {
     const applicationFee = Math.round(amount * feePercent);
     const safeNext =
       typeof next === "string" && next.startsWith("/") ? next : "/learn";
-
-    const destination =
-      teacherProfile?.charges_enabled && teacherProfile.stripe_account_id
-        ? teacherProfile.stripe_account_id
-        : null;
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -78,6 +72,7 @@ export async function POST(req: NextRequest) {
         courseId: course.id,
         userId: user.id,
         next: safeNext,
+        paidOut: destination ? "destination" : "later",
       },
       payment_intent_data: destination
         ? {

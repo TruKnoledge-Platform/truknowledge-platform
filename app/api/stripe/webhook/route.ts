@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { fulfillCheckoutSession } from "@/lib/fulfill-checkout";
+import { syncStripeAccount } from "@/lib/teacher-payout";
 
 export const runtime = "nodejs";
 
@@ -31,6 +32,11 @@ export async function POST(req: NextRequest) {
   ) {
     const session = event.data.object as Stripe.Checkout.Session;
     await fulfillCheckoutSession(session);
+  }
+
+  if (event.type === "account.updated") {
+    const account = event.data.object as Stripe.Account;
+    await syncStripeAccount(account);
   }
 
   return NextResponse.json({ received: true });

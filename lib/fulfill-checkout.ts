@@ -136,6 +136,7 @@ export async function fulfillCheckoutSession(session: Stripe.Checkout.Session) {
         user_id: userId,
         amount,
         stripe_session_id: sessionId,
+        transferred: meta.paidOut === "destination",
       });
     }
   }
