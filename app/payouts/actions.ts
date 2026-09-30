@@ -12,7 +12,7 @@ export async function savePayoutSchedule(formData: FormData) {
   if (!user) redirect("/login?next=/payouts");
 
   const raw = String(formData.get("schedule"));
-  const schedule = raw === "daily" ? "daily" : raw === "instant" ? "instant" : "monthly";
+  const schedule = raw === "instant" ? "instant" : "monthly";
   try {
     await setPayoutSchedule(user.id, schedule);
   } catch (err) {

@@ -104,7 +104,15 @@ export async function refreshTeacher(userId: string) {
     .maybeSingle();
 
   const raw = teacher?.payout_schedule;
-  const schedule = raw === "daily" || raw === "instant" ? raw : "monthly";
+  const schedule = raw === "instant" ? "instant" : "monthly";
+
+  if (raw === "daily" && teacher?.stripe_account_id) {
+    try {
+      await setPayoutSchedule(userId, "monthly");
+    } catch {
+      // leave the page usable if Stripe rejects the switch
+    }
+  }
 
   if (!teacher?.stripe_account_id) {
     return {
@@ -298,7 +306,7 @@ export async function destinationForTeacher(teacherId: string) {
 
 export async function setPayoutSchedule(
   userId: string,
-  schedule: "daily" | "monthly" | "instant"
+  schedule: "monthly" | "instant"
 ) {
   const supabase = createAdmin();
   const { data: teacher } = await supabase
@@ -314,11 +322,9 @@ export async function setPayoutSchedule(
     settings: {
       payouts: {
         schedule:
-          schedule === "daily"
-            ? { interval: "daily" }
-            : schedule === "instant"
-              ? { interval: "manual" }
-              : { interval: "monthly", monthly_anchor: 1 },
+          schedule === "instant"
+            ? { interval: "manual" }
+            : { interval: "monthly", monthly_anchor: 1 },
       },
     },
   });

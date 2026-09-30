@@ -28,10 +28,10 @@ export default async function PayoutsPage({
         <h1 className="mt-4 text-3xl font-semibold">Payouts</h1>
         <p className="mt-3 text-slate-400">
           You keep {keep}% of each paid enrollment. TruKnowledge keeps{" "}
-          {status.feePercent}%, and Stripe keeps its card fee. Monthly and Daily
-          add no extra TruKnowledge fee. Immediate costs $
-          {status.instantFee.toFixed(2)} each time the balance is sent, plus
-          Stripe’s own instant fee of about 1%.
+          {status.feePercent}%, and Stripe keeps its card fee. Monthly adds no
+          extra TruKnowledge fee. Immediate costs ${status.instantFee.toFixed(2)}{" "}
+          each time the balance is sent, plus Stripe’s own instant fee of about
+          1%.
         </p>
 
         {error && (
@@ -62,10 +62,9 @@ export default async function PayoutsPage({
             {status.payoutsEnabled ? "." : ". Payouts to the bank are still being confirmed."}
             {" "}
             New sales send your share to Stripe. Monthly sends the bank payment
-            on the 1st. Daily sends it each day the money is available. Immediate
-            sends it in minutes and costs ${status.instantFee.toFixed(2)} each
-            time. Opening this page also sends your share of any earlier sales
-            that stayed on TruKnowledge.
+            on the 1st. Immediate sends it in minutes and costs $
+            {status.instantFee.toFixed(2)} each time. Opening this page also
+            sends your share of any earlier sales that stayed on TruKnowledge.
           </p>
         )}
 
@@ -124,22 +123,6 @@ export default async function PayoutsPage({
                 <span className="block font-medium">Monthly</span>
                 <span className="mt-1 block text-slate-400">
                   Stripe sends the balance on the 1st. No extra fee.
-                </span>
-              </span>
-            </label>
-            <label className="flex items-start gap-3 rounded-xl border border-slate-800 bg-[#111827] p-4 text-sm">
-              <input
-                type="radio"
-                name="schedule"
-                value="daily"
-                defaultChecked={status.schedule === "daily"}
-              />
-              <span>
-                <span className="block font-medium">Daily</span>
-                <span className="mt-1 block text-slate-400">
-                  Stripe sends the balance each day it is available. Card
-                  payments still take about two days to clear. No extra
-                  TruKnowledge fee.
                 </span>
               </span>
             </label>
