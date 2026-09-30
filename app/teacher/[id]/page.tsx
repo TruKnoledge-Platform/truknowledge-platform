@@ -8,6 +8,7 @@ import ListingCheckboxes from "./listing-checkboxes";
 import WebAppQr from "./web-app-qr";
 import { palettes, type PaletteId } from "@/lib/palettes";
 import { fonts, type FontId } from "@/lib/fonts";
+import { captureVideoFrame, linkThumbnail } from "@/lib/thumb";
 
 const templates = [
   { id: "classic_linear", name: "Classic Linear" },
@@ -22,6 +23,7 @@ type Session = {
   order_index: number;
   video_url: string | null;
   body: string | null;
+  thumbnail_url: string | null;
 };
 
 type Material = {
@@ -29,6 +31,7 @@ type Material = {
   session_id: string;
   title: string;
   file_url: string | null;
+  thumbnail_url: string | null;
   is_advanced: boolean;
 };
 
@@ -97,7 +100,7 @@ export default function EditCoursePage() {
   async function loadSessions() {
     const { data } = await supabase
       .from("sessions")
-      .select("id, title, order_index, video_url, body")
+      .select("id, title, order_index, video_url, body, thumbnail_url")
       .eq("course_id", id)
       .order("order_index", { ascending: true });
 
@@ -107,7 +110,7 @@ export default function EditCoursePage() {
     if (rows.length) {
       const { data: mats } = await supabase
         .from("materials")
-        .select("id, session_id, title, file_url, is_advanced")
+        .select("id, session_id, title, file_url, thumbnail_url, is_advanced")
         .in(
           "session_id",
           rows.map((s) => s.id)
@@ -409,6 +412,37 @@ export default function EditCoursePage() {
     if (error) setError(error.message);
   }
 
+  async function saveSessionThumb(sessionId: string, file: File | undefined) {
+    if (!file) return;
+    setUploading(true);
+    setError("");
+    try {
+      const url = await uploadFile(file, "thumbnails");
+      const { error } = await supabase
+        .from("sessions")
+        .update({ thumbnail_url: url })
+        .eq("id", sessionId);
+      if (error) setError(error.message);
+      else await loadSessions();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+    }
+    setUploading(false);
+  }
+
+  async function clearSessionThumb(sessionId: string) {
+    setError("");
+    const { error } = await supabase
+      .from("sessions")
+      .update({ thumbnail_url: null })
+      .eq("id", sessionId);
+    if (error) {
+      setError(error.message);
+      return;
+    }
+    await loadSessions();
+  }
+
   async function addMaterial(sessionId: string) {
     const titleValue = (materialTitle[sessionId] || "").trim();
     const file = materialFile[sessionId];
@@ -421,8 +455,24 @@ export default function EditCoursePage() {
 
     setError("");
     setUploading(true);
+    let thumb: string | null = null;
     try {
-      if (file) urlValue = await uploadFile(file, "materials");
+      if (file) {
+        urlValue = await uploadFile(file, "materials");
+        if (file.type.startsWith("image/")) {
+          thumb = urlValue;
+        } else if (file.type.startsWith("video/")) {
+          const frame = await captureVideoFrame(file);
+          if (frame) {
+            thumb = await uploadFile(
+              new File([frame], "thumb.jpg", { type: "image/jpeg" }),
+              "thumbnails"
+            );
+          }
+        }
+      } else {
+        thumb = linkThumbnail(urlValue);
+      }
     } catch (err) {
       setUploading(false);
       setError(err instanceof Error ? err.message : "Upload failed");
@@ -434,6 +484,7 @@ export default function EditCoursePage() {
       session_id: sessionId,
       title: titleValue,
       file_url: urlValue,
+      thumbnail_url: thumb,
       is_advanced: Boolean(materialAdvanced[sessionId]),
     });
 
@@ -853,6 +904,38 @@ export default function EditCoursePage() {
                     onBlur={(e) => saveSessionVideo(session.id, e.target.value)}
                   />
 
+                  <p className="mb-2 text-sm text-slate-300">Session thumbnail (optional)</p>
+                  <div className="mb-4 flex flex-wrap items-center gap-3">
+                    {session.thumbnail_url && (
+                      <img
+                        src={session.thumbnail_url}
+                        alt=""
+                        className="aspect-video w-40 rounded-lg border border-slate-700 object-cover"
+                      />
+                    )}
+                    <label className="inline-flex cursor-pointer items-center rounded-lg border border-orange-500 px-3 py-2 text-sm text-orange-400">
+                      {session.thumbnail_url ? "Change thumbnail" : "Add thumbnail"}
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        className="hidden"
+                        onChange={(e) => saveSessionThumb(session.id, e.target.files?.[0])}
+                      />
+                    </label>
+                    {session.thumbnail_url && (
+                      <button
+                        type="button"
+                        onClick={() => clearSessionThumb(session.id)}
+                        className="text-sm text-red-400"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  <p className="mb-4 text-xs text-slate-500">
+                    Leave this empty and a YouTube video will use its own picture.
+                  </p>
+
                   <p className="mb-2 text-sm text-slate-300">Session notes</p>
                   <textarea
                     defaultValue={session.body || ""}
@@ -871,10 +954,19 @@ export default function EditCoursePage() {
                           href={item.file_url || "#"}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-sm text-orange-400 hover:underline"
+                          className="flex min-w-0 items-center gap-3 text-sm text-orange-400 hover:underline"
                         >
-                          {item.title}
-                          {item.is_advanced ? " (advanced)" : ""}
+                          {item.thumbnail_url && (
+                            <img
+                              src={item.thumbnail_url}
+                              alt=""
+                              className="aspect-video w-24 shrink-0 rounded-md object-cover"
+                            />
+                          )}
+                          <span className="truncate">
+                            {item.title}
+                            {item.is_advanced ? " (advanced)" : ""}
+                          </span>
                         </a>
                         <button
                           type="button"

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { sessionPicture } from "@/lib/thumb";
 import { createClient } from "@/lib/supabase-server";
 import EnrollButton from "../enroll-button";
 import ReviewForm from "../review-form";
@@ -48,7 +49,7 @@ export default async function CoursePage({
 
   const { data: sessions } = await supabase
     .from("sessions")
-    .select("id, title, order_index")
+    .select("id, title, order_index, thumbnail_url, video_url")
     .eq("course_id", id)
     .order("order_index", { ascending: true });
 
@@ -141,15 +142,27 @@ export default async function CoursePage({
             {!sessions?.length && (
               <p className="text-slate-400">No sessions yet.</p>
             )}
-            {sessions?.map((session) => (
+            {sessions?.map((session) => {
+              const picture = sessionPicture(session.thumbnail_url, session.video_url);
+              return (
               <div
                 key={session.id}
-                className="rounded-xl border border-slate-800 bg-[#111827] px-4 py-3"
+                className="flex items-center gap-3 rounded-xl border border-slate-800 bg-[#111827] px-4 py-3"
               >
-                <span className="text-sm text-orange-400">{session.order_index}</span>
-                <span className="ml-3">{session.title}</span>
+                {picture && (
+                  <img
+                    src={picture}
+                    alt=""
+                    className="aspect-video w-28 shrink-0 rounded-md object-cover"
+                  />
+                )}
+                <div>
+                  <span className="text-sm text-orange-400">{session.order_index}</span>
+                  <span className="ml-3">{session.title}</span>
+                </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 

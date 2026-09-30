@@ -6,12 +6,14 @@ import { createClient } from "@/lib/supabase-browser";
 import CourseDiscussion from "@/app/courses/course-discussion";
 import { getPalette } from "@/lib/palettes";
 import { getFont } from "@/lib/fonts";
+import { sessionPicture } from "@/lib/thumb";
 
 type Session = {
   id: string;
   title: string;
   order_index: number;
   video_url: string | null;
+  thumbnail_url: string | null;
 };
 
 type Material = {
@@ -19,6 +21,7 @@ type Material = {
   session_id: string;
   title: string;
   file_url: string | null;
+  thumbnail_url: string | null;
   is_advanced: boolean;
 };
 
@@ -132,7 +135,7 @@ export default function PlayCoursePage() {
 
       const { data: sessionRows } = await supabase
         .from("sessions")
-        .select("id, title, order_index, video_url")
+        .select("id, title, order_index, video_url, thumbnail_url")
         .eq("course_id", courseId)
         .order("order_index", { ascending: true });
 
@@ -146,7 +149,7 @@ export default function PlayCoursePage() {
       if (list.length) {
         const { data: mats } = await supabase
           .from("materials")
-          .select("id, session_id, title, file_url, is_advanced")
+          .select("id, session_id, title, file_url, thumbnail_url, is_advanced")
           .in(
             "session_id",
             list.map((s) => s.id)
@@ -231,9 +234,19 @@ export default function PlayCoursePage() {
 
         <p className="mt-6 text-sm" style={{ color: theme.accent }}>Now playing</p>
         <h1 className="mt-2 text-3xl font-semibold">{title}</h1>
-        <p className="mt-2" style={{ color: theme.muted }}>
-          {current ? current.title : "No sessions yet"}
-        </p>
+        <div className="mt-2 flex items-center gap-3">
+          {sessionPicture(current?.thumbnail_url, current?.video_url) && (
+            <img
+              src={sessionPicture(current?.thumbnail_url, current?.video_url) || ""}
+              alt=""
+              className="aspect-video w-28 shrink-0 rounded-lg object-cover"
+              style={{ border: `1px solid ${theme.border}` }}
+            />
+          )}
+          <p style={{ color: theme.muted }}>
+            {current ? current.title : "No sessions yet"}
+          </p>
+        </div>
 
         <div
           className="mt-6 aspect-video w-full overflow-hidden rounded-2xl border"
@@ -317,10 +330,17 @@ export default function PlayCoursePage() {
                 href={item.file_url || "#"}
                 target="_blank"
                 rel="noreferrer"
-                className="mb-2 block text-sm hover:underline"
+                className="mb-3 flex items-center gap-3 text-sm hover:underline"
                 style={{ color: theme.accent }}
               >
-                {item.title}
+                {item.thumbnail_url && (
+                  <img
+                    src={item.thumbnail_url}
+                    alt=""
+                    className="aspect-video w-24 shrink-0 rounded-md object-cover"
+                  />
+                )}
+                <span>{item.title}</span>
               </a>
             ))}
           </div>
@@ -338,10 +358,17 @@ export default function PlayCoursePage() {
                 href={item.file_url || "#"}
                 target="_blank"
                 rel="noreferrer"
-                className="mb-2 block text-sm hover:underline"
+                className="mb-3 flex items-center gap-3 text-sm hover:underline"
                 style={{ color: theme.accent }}
               >
-                {item.title}
+                {item.thumbnail_url && (
+                  <img
+                    src={item.thumbnail_url}
+                    alt=""
+                    className="aspect-video w-24 shrink-0 rounded-md object-cover"
+                  />
+                )}
+                <span>{item.title}</span>
               </a>
             ))}
           </div>

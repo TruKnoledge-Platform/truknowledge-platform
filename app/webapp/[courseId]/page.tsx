@@ -7,6 +7,7 @@ import EnrollButton from "@/app/courses/enroll-button";
 import CourseDiscussion from "@/app/courses/course-discussion";
 import { getPalette } from "@/lib/palettes";
 import { getFont } from "@/lib/fonts";
+import { sessionPicture } from "@/lib/thumb";
 
 type Session = {
   id: string;
@@ -14,6 +15,7 @@ type Session = {
   order_index: number;
   video_url: string | null;
   body: string | null;
+  thumbnail_url: string | null;
 };
 
 type Material = {
@@ -21,6 +23,7 @@ type Material = {
   session_id: string;
   title: string;
   file_url: string | null;
+  thumbnail_url: string | null;
   is_advanced: boolean;
 };
 
@@ -174,7 +177,7 @@ function WebAppPlayer() {
 
       const { data: sessionRows } = await supabase
         .from("sessions")
-        .select("id, title, order_index, video_url, body")
+        .select("id, title, order_index, video_url, body, thumbnail_url")
         .eq("course_id", courseId)
         .order("order_index", { ascending: true });
 
@@ -195,7 +198,7 @@ function WebAppPlayer() {
         if (list.length && (enrollment || owner)) {
           const { data: mats } = await supabase
             .from("materials")
-            .select("id, session_id, title, file_url, is_advanced")
+            .select("id, session_id, title, file_url, thumbnail_url, is_advanced")
             .in(
               "session_id",
               list.map((s) => s.id)
@@ -378,18 +381,30 @@ function WebAppPlayer() {
             <section className="mt-10">
               <h2 className="text-xl font-semibold">Sessions</h2>
               <div className="mt-4 space-y-3">
-                {sessions.map((session) => (
+                {sessions.map((session) => {
+                  const picture = sessionPicture(session.thumbnail_url, session.video_url);
+                  return (
                   <div
                     key={session.id}
-                    className="rounded-xl border px-4 py-3"
+                    className="flex items-center gap-3 rounded-xl border px-4 py-3"
                     style={{ borderColor: theme.border, background: theme.panel }}
                   >
-                    <span className="text-sm" style={{ color: theme.accent }}>
-                      {session.order_index}
-                    </span>
-                    <span className="ml-3">{session.title}</span>
+                    {picture && (
+                      <img
+                        src={picture}
+                        alt=""
+                        className="aspect-video w-28 shrink-0 rounded-md object-cover"
+                      />
+                    )}
+                    <div>
+                      <span className="text-sm" style={{ color: theme.accent }}>
+                        {session.order_index}
+                      </span>
+                      <span className="ml-3">{session.title}</span>
+                    </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           )}
@@ -436,9 +451,19 @@ function WebAppPlayer() {
             <h1 className="text-3xl font-semibold">{title}</h1>
           </div>
         </div>
-        <p className="mt-2" style={{ color: theme.muted }}>
-          {current ? current.title : "No sessions yet"}
-        </p>
+        <div className="mt-2 flex items-center gap-3">
+          {sessionPicture(current?.thumbnail_url, current?.video_url) && (
+            <img
+              src={sessionPicture(current?.thumbnail_url, current?.video_url) || ""}
+              alt=""
+              className="aspect-video w-28 shrink-0 rounded-lg object-cover"
+              style={{ border: `1px solid ${theme.border}` }}
+            />
+          )}
+          <p style={{ color: theme.muted }}>
+            {current ? current.title : "No sessions yet"}
+          </p>
+        </div>
 
         <div
           className="mt-6 aspect-video w-full overflow-hidden rounded-2xl border"
@@ -536,10 +561,17 @@ function WebAppPlayer() {
                 href={item.file_url || "#"}
                 target="_blank"
                 rel="noreferrer"
-                className="mb-2 block text-sm hover:underline"
+                className="mb-3 flex items-center gap-3 text-sm hover:underline"
                 style={{ color: theme.accent }}
               >
-                {item.title}
+                {item.thumbnail_url && (
+                  <img
+                    src={item.thumbnail_url}
+                    alt=""
+                    className="aspect-video w-24 shrink-0 rounded-md object-cover"
+                  />
+                )}
+                <span>{item.title}</span>
               </a>
             ))}
           </div>
@@ -557,10 +589,17 @@ function WebAppPlayer() {
                 href={item.file_url || "#"}
                 target="_blank"
                 rel="noreferrer"
-                className="mb-2 block text-sm hover:underline"
+                className="mb-3 flex items-center gap-3 text-sm hover:underline"
                 style={{ color: theme.accent }}
               >
-                {item.title}
+                {item.thumbnail_url && (
+                  <img
+                    src={item.thumbnail_url}
+                    alt=""
+                    className="aspect-video w-24 shrink-0 rounded-md object-cover"
+                  />
+                )}
+                <span>{item.title}</span>
               </a>
             ))}
           </div>
