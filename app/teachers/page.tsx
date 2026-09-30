@@ -167,8 +167,8 @@ export default function TeachersLanding() {
 
       <section className="mx-auto max-w-5xl px-6 pb-16">
         <h2 className="text-xs font-medium uppercase tracking-[0.22em] text-[#E8A24A]">Side by side</h2>
-        <div className="mt-6 overflow-hidden rounded-2xl border border-white/10">
-          <table className="w-full text-left text-sm">
+        <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10">
+          <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="bg-[#12182A] text-[#E8A24A]">
               <tr>
                 <th className="px-4 py-3 font-medium" />
