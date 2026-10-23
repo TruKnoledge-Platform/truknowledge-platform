@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 function storageKey(courseId: string) {
-  return `tk-hide-open-note-v2:${courseId}`;
+  return `tk-hide-open-note-v3:${courseId}`;
 }
 
 export default function WebAppOpenNote({
@@ -55,8 +55,8 @@ export default function WebAppOpenNote({
       ) : (
         <>
           <p className="mt-2">
-            You can keep this course on your home screen. The icon opens this
-            course, like an app, on the phone you already have.
+            This course can be saved to your home screen for quicker and easier
+            access to your course!
           </p>
           <p className="mt-3">
             <span style={{ color: accent }}>iPhone / iPad — Safari:</span> tap Share

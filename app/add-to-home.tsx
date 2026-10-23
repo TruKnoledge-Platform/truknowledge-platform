@@ -53,7 +53,10 @@ export default function AddToHome({ accent = "#E8A24A" }: { accent?: string }) {
       {open && (
         <div className="absolute right-0 z-20 mt-2 w-80 rounded-xl border border-slate-700 bg-[#111827] p-4 text-left text-sm leading-6 text-slate-300">
           <p className="font-medium text-white">Save this course to your home screen</p>
-          <p className="mt-2">The icon opens this course.</p>
+          <p className="mt-2">
+            This course can be saved to your home screen for quicker and easier
+            access to your course!
+          </p>
           <p className="mt-3">
             <span style={{ color: accent }}>iPhone — Safari:</span> Share, then Add to
             Home Screen, then Add.
