@@ -8,6 +8,7 @@ import CourseDiscussion from "@/app/courses/course-discussion";
 import { getPalette } from "@/lib/palettes";
 import { getFont } from "@/lib/fonts";
 import { sessionPicture } from "@/lib/thumb";
+import AddToHome from "@/app/add-to-home";
 
 type Session = {
   id: string;
@@ -290,14 +291,17 @@ function WebAppPlayer() {
             <a href={backHref} className="text-sm" style={{ color: theme.muted }}>
               {backLabel}
             </a>
-            <button
-              type="button"
-              onClick={shareCourse}
-              className="rounded-lg border px-4 py-2 text-sm"
-              style={{ borderColor: theme.accent, color: theme.accent }}
-            >
-              {copied ? "Link copied" : "Share"}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={shareCourse}
+                className="rounded-lg border px-4 py-2 text-sm"
+                style={{ borderColor: theme.accent, color: theme.accent }}
+              >
+                {copied ? "Link copied" : "Share"}
+              </button>
+              <AddToHome accent={theme.accent} />
+            </div>
           </div>
 
           <div className="mt-8 flex items-start gap-4">
@@ -420,14 +424,17 @@ function WebAppPlayer() {
           <a href={backHref} className="text-sm" style={{ color: theme.muted }}>
             {backLabel}
           </a>
-          <button
-            type="button"
-            onClick={shareCourse}
-            className="rounded-lg border px-4 py-2 text-sm"
-            style={{ borderColor: theme.accent, color: theme.accent }}
-          >
-            {copied ? "Link copied" : "Share"}
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={shareCourse}
+              className="rounded-lg border px-4 py-2 text-sm"
+              style={{ borderColor: theme.accent, color: theme.accent }}
+            >
+              {copied ? "Link copied" : "Share"}
+            </button>
+            <AddToHome accent={theme.accent} />
+          </div>
         </div>
 
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
