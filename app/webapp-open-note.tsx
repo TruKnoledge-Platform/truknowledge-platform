@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 function storageKey(courseId: string) {
-  return `tk-hide-open-note:${courseId}`;
+  return `tk-hide-open-note-v2:${courseId}`;
 }
 
 export default function WebAppOpenNote({
@@ -15,17 +15,9 @@ export default function WebAppOpenNote({
 }) {
   const [show, setShow] = useState(false);
   const [hideNext, setHideNext] = useState(false);
-  const [ios, setIos] = useState(false);
-  const [safari, setSafari] = useState(true);
   const [installed, setInstalled] = useState(false);
 
   useEffect(() => {
-    const ua = navigator.userAgent;
-    const iosDevice =
-      /iPad|iPhone|iPod/.test(ua) ||
-      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-    setIos(iosDevice);
-    setSafari(iosDevice && /Safari/i.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua));
     setInstalled(
       window.matchMedia("(display-mode: standalone)").matches ||
         ("standalone" in navigator &&
@@ -66,25 +58,27 @@ export default function WebAppOpenNote({
             You can keep this course on your home screen. The icon opens this
             course, like an app, on the phone you already have.
           </p>
-          {ios ? (
-            safari ? (
-              <p className="mt-3">
-                <span style={{ color: accent }}>iPhone / iPad:</span> in Safari, tap
-                Share (the square with an arrow), then Add to Home Screen, then Add.
-              </p>
-            ) : (
-              <p className="mt-3">
-                <span style={{ color: accent }}>iPhone / iPad:</span> open this page
-                in Safari first. Then tap Share, then Add to Home Screen.
-              </p>
-            )
-          ) : (
-            <p className="mt-3">
-              <span style={{ color: accent }}>Android:</span> tap Home screen next
-              to Share, or the browser menu (three dots), then Add to Home screen
-              or Install app.
-            </p>
-          )}
+          <p className="mt-3">
+            <span style={{ color: accent }}>iPhone / iPad — Safari:</span> tap Share
+            (the square with an arrow), then Add to Home Screen, then Add.
+          </p>
+          <p className="mt-2">
+            <span style={{ color: accent }}>iPhone / iPad — Chrome:</span> tap Share,
+            then Add to Home Screen.
+          </p>
+          <p className="mt-2">
+            <span style={{ color: accent }}>iPhone / iPad — Brave:</span> tap the
+            menu, then Add to Home Screen.
+          </p>
+          <p className="mt-3">
+            <span style={{ color: accent }}>Android — Chrome:</span> tap the three
+            dots, then Add to Home screen or Install app. Or tap Home screen next
+            to Share.
+          </p>
+          <p className="mt-2">
+            <span style={{ color: accent }}>Android — Brave:</span> tap the three
+            dots, then Add to Home screen.
+          </p>
         </>
       )}
       <label className="mt-4 flex items-start gap-3 text-slate-200">
