@@ -9,6 +9,7 @@ import { getPalette } from "@/lib/palettes";
 import { getFont } from "@/lib/fonts";
 import { sessionPicture } from "@/lib/thumb";
 import AddToHome from "@/app/add-to-home";
+import WebAppOpenNote from "@/app/webapp-open-note";
 
 type Session = {
   id: string;
@@ -303,6 +304,7 @@ function WebAppPlayer() {
               <AddToHome accent={theme.accent} />
             </div>
           </div>
+          <WebAppOpenNote courseId={courseId} accent={theme.accent} />
 
           <div className="mt-8 flex items-start gap-4">
             {iconUrl && (
@@ -436,6 +438,8 @@ function WebAppPlayer() {
             <AddToHome accent={theme.accent} />
           </div>
         </div>
+
+        <WebAppOpenNote courseId={courseId} accent={theme.accent} />
 
         {error && <p className="mt-4 text-sm text-red-400">{error}</p>}
         {isOwner && !isPublished && (
