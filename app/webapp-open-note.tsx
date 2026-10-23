@@ -46,7 +46,6 @@ export default function WebAppOpenNote({
 
   return (
     <div className="mt-4 rounded-2xl border border-slate-700 bg-[#111827] p-5 text-left text-sm leading-6 text-slate-300">
-      <p className="font-medium text-white">When you open this course</p>
       {installed ? (
         <p className="mt-2">
           You opened it from your home screen. It starts where you left off. The
@@ -54,7 +53,7 @@ export default function WebAppOpenNote({
         </p>
       ) : (
         <>
-          <p className="mt-2">
+          <p className="font-bold text-white">
             This course can be saved to your home screen for quicker and easier
             access to your course!
           </p>
