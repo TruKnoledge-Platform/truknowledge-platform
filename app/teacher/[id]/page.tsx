@@ -532,7 +532,18 @@ export default function EditCoursePage() {
               />
             )}
             <div className="min-w-0">
-              <h1 className="text-3xl font-semibold">Manage course</h1>
+              <h1 className="flex items-center gap-3 text-3xl font-semibold">
+                Manage course
+                <span
+                  className={`inline-block h-3.5 w-3.5 rounded-full ${
+                    isPublished
+                      ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.95)]"
+                      : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.95)]"
+                  }`}
+                  title={isPublished ? "Published" : "Not published"}
+                  aria-label={isPublished ? "Published" : "Not published"}
+                />
+              </h1>
               <p className="mt-1 text-sm text-slate-400">
                 {title || "Untitled"} · {isPublished ? "Published" : "Draft"}
               </p>

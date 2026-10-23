@@ -141,15 +141,26 @@ export default async function TeacherPage() {
                 >
                   <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-4">
-                      {picture ? (
-                        <img
-                          src={picture}
-                          alt=""
-                          className="h-14 w-14 shrink-0 rounded-xl border border-slate-700 object-cover"
+                      <div className="relative shrink-0">
+                        {picture ? (
+                          <img
+                            src={picture}
+                            alt=""
+                            className="h-14 w-14 rounded-xl border border-slate-700 object-cover"
+                          />
+                        ) : (
+                          <div className="h-14 w-14 rounded-xl border border-slate-700 bg-[#0B1220]" />
+                        )}
+                        <span
+                          className={`absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full border-2 border-[#111827] ${
+                            course.is_published
+                              ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.95)]"
+                              : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.95)]"
+                          }`}
+                          title={course.is_published ? "Published" : "Not published"}
+                          aria-label={course.is_published ? "Published" : "Not published"}
                         />
-                      ) : (
-                        <div className="h-14 w-14 shrink-0 rounded-xl border border-slate-700 bg-[#0B1220]" />
-                      )}
+                      </div>
                       <div className="min-w-0">
                         <h3 className="text-lg font-medium">{course.title}</h3>
                         <p className="mt-1 text-sm text-slate-400">
